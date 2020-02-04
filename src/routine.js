@@ -234,115 +234,61 @@ function getPoints(it, xstt, ystt, xend, yend) {
   } else {
     background(255 - 125*255/Value);
   }
-  busy = true;
   show();
-  done = 0;
-  let wi = width / degrad;
-  let he = height / degrad;
-  proc = [];
-  for (let i = 0; i < he; i++) {
-    let a2 = map(i, 0, he, ystt, yend);
-    let a4 = map(i + 1, 0, he, ystt, yend);
-    let yprio = Math.abs(i - he/2);
-    for (let j = 0; j < workers; j++) {
-      let x0 = Math.round(map(j, 0, workers, 0, width / degrad));
-      let x1 = Math.round(map(j + 1, 0, workers, 0, width / degrad));
-      let a1 = map(j, 0, workers, xstt, xend);
-      let a3 = map(j + 1, 0, workers, xstt, xend);
-      let xprio = Math.abs(j - workers/2)*he/workers;
-      let prio = Math.sqrt(Math.pow(xprio, 2) + Math.pow(yprio, 2)).toFixed(1);
-      proc.push({prio: prio, x0: x0, y0: i, x1: x1, y1: i + 1, it: it, a1: a1, a2: a2, a3: a3, a4: a4});
-    }
-  }
-  proc = proc.sort((a,b)=>{
-    return a.prio - b.prio;
-  });
-  for (let i = 0; i<proc.length; i++){
-    let {x0, y0, x1, y1, it, a1, a2, a3, a4} = proc[i];
-    stuff(x0, y0, x1, y1, it, a1, a2, a3, a4);
-  }
-}
-
-function stuff(x0, y0, x1, y1, it, xstt, ystt, xend, yend) {
-  setTimeout(() => {
-    if (stop) {
-      done++;
-      if (done == proc.length) {
-        busy = false;
-        unshow();
-        stop = false;
-	      proc = null;
-      }
-      return;
-    }
-    if (P) {
-      x0 = parseInt(x0);
-      y0 = parseInt(y0);
-      x1 = parseInt(x1);
-      y1 = parseInt(y1);
-    }
-    for (let x = x0; x < x1; x++) {
-      for (let y = y0; y < y1; y++) {
-        let z;
-        if (jPo) {
-          z = (P) ? new ComplexP(new BigNumber(jPo.x),
-                    new BigNumber(jPo.y))
-                  :
-                    new Complex(jPo.x, jPo.y);
+  getValues(it, xstt, ystt, xend, yend, width / degrad, height / degrad)
+  .then((res)=>{
+    var a = res.split(';')
+      , x = 0
+      , y = 0;
+    console.log(a.length);
+    for (var n = 0; n < a.length; ++n){
+      if (bw) {
+        colorMode(RGB, 255);
+        let gradient = delta * 255;
+        if (dark) fill(gradient);
+        else fill(255 - gradient);
+      } else {
+        colorMode(HSB, 255);
+        if (a[n]==0) {
+          colorMode(RGB);
+          fill(125);
         }else{
-          z = (P) ?
-            new ComplexP(new BigNumber(0.0),
-                        new BigNumber(0.0))
-          :
-            new Complex(0, 0)
-        }
-        let i = (P) ? mapFloat(x, x0, x1, xstt, xend)
-                    : map(x, x0, x1, xstt, xend);
-        let j = (P) ? mapFloat(y, y0, y1, ystt, yend)
-                    : map(y, y0, y1, ystt, yend);
-        let c = (P) ? new ComplexP(i, j) : new Complex(i, j);
-        if (jPo) {
-          let tmp = c;
-          c = z;
-          z = tmp;
-        }
-        for (let k = 0; k < it; k++) {
-	        z = z.square();
-          z = z.add(c);
-          if (drawRect(k/it, z.getR(), 2, x, y)) break;
+          colorMode(HSB);
+          let hue = a[n] / 100 * Hue;
+          fill(hue, sat, Value);
         }
       }
+      noStroke();
+      rect(x * degrad, y * degrad, degrad, degrad);
+      ++y;
+      if (n % parseInt(height/degrad) == 0){
+        ++x;
+        y = 0;
+      }
     }
-    done++;
-    if (done == proc.length) {
-      unshow();
-      busy = false;
-      proc = null;
-    }
-  }, 1);
+    unshow();
+  });
 }
 
-function drawRect(delta, val, bound, x, y){
-  let check = (P) ? (val.isGreaterThan(bound)) : (val > bound);
-  if (check) {
-    if (bw) {
-      colorMode(RGB, 255);
-      let gradient = delta * 255;
-      if (dark) fill(gradient);
-      else fill(255 - gradient);
-    } else {
-      colorMode(HSB, 255);
-      let hue = delta * Hue;
-      fill(hue, sat, Value);
-    }
-    noStroke();
-    rect(x * degrad, y * degrad, degrad, degrad);
-    return true;
-  }
-  return false;
+function getValues(it, xstt, ystt, xend, yend, wi, he){
+  return new Promise((resolve, reject)=>{
+    fetch('http://localhost:1010/?it=' + it
+        + '&xstt=' + xstt
+        + '&ystt=' + ystt
+        + '&xend=' + xend
+        + '&yend=' + yend
+        + '&wi=' + parseInt(wi)
+        + '&he=' + parseInt(he)
+        + '&bound=' + 2
+        + '&zoom=' + 1)
+    .then((res)=>{
+      return res.text()
+    })
+    .then((res)=>{
+      resolve(res);
+    })
+  })
 }
-
-
 
 function setupP(draw) {
   BigNumber.set({ DECIMAL_PLACES: prec });
@@ -396,50 +342,14 @@ function makeSetP() {
 
 function dropSetP() {
   let crd = coords[coords.length-1];
-  getPointsP(
+  got_response = false;
+  getPoints(
     iter,
     new BigNumber(crd.x0),
     new BigNumber(crd.y0),
     new BigNumber(crd.x1),
     new BigNumber(crd.y1)
   );
-}
-
-function getPointsP(it, xstt, ystt, xend, yend) {
-  colorMode(RGB, 255);
-  if (bw) {
-    if (!dark) background(0);
-    else background(255);
-  } else {
-    background(125);
-  }
-  busy = true;
-  show();
-  done = 0;
-  let wi = width / degrad;
-  let he = height / degrad;
-  proc = [];
-  for (let i = 0; i < he; i++) {
-    let a2 = mapFloat(i, 0, he, ystt, yend);
-    let a4 = mapFloat(i + 1, 0, he, ystt, yend);
-    let yprio = Math.abs(i - he/2);
-    for (let j = 0; j < workers; j++) {
-      let x0 = mapFloat(j, 0, workers, 0, wi);
-      let x1 = mapFloat(j+1, 0, workers, 0, wi);
-      let a1 = mapFloat(j, 0, workers, xstt, xend);
-      let a3 = mapFloat(j + 1, 0, workers, xstt, xend);
-      let xprio = Math.abs(j - workers/2)*he/workers;
-      let prio = Math.sqrt(Math.pow(xprio, 2) + Math.pow(yprio, 2)).toFixed(1);
-      proc.push({prio: prio, x0: x0, y0: i, x1: x1, y1: i + 1, it: it, a1: a1, a2: a2, a3: a3, a4: a4});
-    }
-  }
-  proc = proc.sort((a,b)=>{
-    return a.prio - b.prio;
-  });
-  for (let i = 0; i<proc.length; i++){
-    let {x0, y0, x1, y1, it, a1, a2, a3, a4} = proc[i];
-    stuff(x0, y0, x1, y1, it, a1, a2, a3, a4);
-  }
 }
 
 function mapFloat(a, b, c, d, e){
