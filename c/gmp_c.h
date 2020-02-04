@@ -6,9 +6,9 @@
 
 
 
-void mapc(mpf_t out, const char * a, const char * b, const char * c, const char * d, const char * e){
+void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
   mpf_t a0, b0, c0, d0, e0;
-  mpf_t sub1, sub2, sub3, div1, mul1, res;
+  mpf_t sub1, sub2, sub3, div1, mul1;
 
   mpf_init(a0);
   mpf_init(b0);
@@ -21,7 +21,6 @@ void mapc(mpf_t out, const char * a, const char * b, const char * c, const char 
   mpf_init(sub3);
   mpf_init(div1);
   mpf_init(mul1);
-  mpf_init(res);
   
   mpf_set_str(a0, a, 10);
   mpf_set_str(b0, b, 10);
@@ -34,34 +33,18 @@ void mapc(mpf_t out, const char * a, const char * b, const char * c, const char 
   mpf_sub(sub3, e0, d0);
   mpf_div(div1, sub1, sub2);
   mpf_mul(mul1, div1, sub3);
-  mpf_add(out, mul1, d0);
-}
+  mpf_add(*out, mul1, d0);
 
-void reverse(char* str, int len) 
-{ 
-    int i = 0, j = len - 1, temp; 
-    while (i < j) { 
-        temp = str[i]; 
-        str[i] = str[j]; 
-        str[j] = temp; 
-        i++; 
-        j--; 
-    } 
-} 
-
-int intToStr(int x, char str[], int d) 
-{ 
-    int i = 0; 
-    while (x) { 
-        str[i++] = (x % 10) + '0'; 
-        x = x / 10; 
-    } 
-    while (i < d) 
-        str[i++] = '0'; 
-  
-    reverse(str, i); 
-    str[i] = '\0'; 
-    return i; 
+  mpf_clear(a0);
+  mpf_clear(b0);
+  mpf_clear(c0);
+  mpf_clear(d0);
+  mpf_clear(e0);
+  mpf_clear(sub1);
+  mpf_clear(sub2);
+  mpf_clear(sub3);
+  mpf_clear(div1);
+  mpf_clear(mul1);
 }
 
 char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
@@ -84,11 +67,11 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
       mpf_init(j);
       mpf_init(z0);
       mpf_init(z1);
-      mpf_set_str(z0, "0.0", 10);
-      mpf_set_str(z1, "0.0", 10);
+      mpf_set_str(z0, "0", 10);
+      mpf_set_str(z1, "0", 10);
       
-      char *str_x = malloc(sizeof(char))
-         , *str_y = malloc(sizeof(char));
+      char *str_x = malloc(sizeof(char)*3)
+         , *str_y = malloc(sizeof(char)*3);
       
       Complex *z = malloc(sizeof(Complex));
       Complex *c = malloc(sizeof(Complex));
@@ -96,11 +79,11 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
       sprintf(str_x, "%i", x);
       sprintf(str_y, "%i", y);
 
-      mapc(i, str_x, "0.0", Wi, Xstt, Xend);
-      mapc(j, str_y, "0.0", He, Ystt, Yend);
+      mapc(&i, str_x, "0", Wi, Xstt, Xend);
+      mapc(&j, str_y, "0", He, Ystt, Yend);
      
-      cc(z0, z1, z);
-      cc( i,  j, c);
+      cc(&z0, &z1, z);
+      cc( &i,  &j, c);
       
       int k;
       int added = 0;
@@ -111,16 +94,26 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
         addc(z, c);
         
         int delta = k * 100 / it;        
-        if (getR(z)>2){
-          char *temp = malloc(sizeof(char));
+        if (checkR(z)>0){
+          char temp[3];
           sprintf(temp, "%i", delta);
           strncat(result, temp, 3);
           strncat(result, ";", 1);
           added = 1;
+          //free(temp);
           break ;
         }
       }
       if (!added) strncat(result, "0;", 2); 
+      
+      free(z);
+      free(c);
+      free(str_x);
+      free(str_y);
+      mpf_clear(z0);
+      mpf_clear(z1);
+      mpf_clear(j);
+      mpf_clear(i);
     }
   }
   return result;
