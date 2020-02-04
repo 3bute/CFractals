@@ -15,7 +15,6 @@
 #include "gmp_c.h"
 
 #define PORT  1010 
-#define MIMETYPE "image/png"
 
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
@@ -27,13 +26,6 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   int fd;
   int ret;
   struct stat sbuf;
-  (void)cls;               /* Unused. Silent compiler warning. */
-  (void)url;               /* Unused. Silent compiler warning. */
-  (void)version;           /* Unused. Silent compiler warning. */
-  (void)upload_data;       /* Unused. Silent compiler warning. */
-  (void)upload_data_size;  /* Unused. Silent compiler warning. */
-  (void)con_cls;           /* Unused. Silent compiler warning. */
-
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
 
