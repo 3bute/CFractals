@@ -40,7 +40,7 @@ int checkR(Complex *z){
   mpf_t a, b, d; 
   mpf_init(a);
   mpf_init(b);
-  mpf_init_set_str(d, "2", 10);
+  mpf_init_set_str(d, "2.0", 10);
 
   mpf_mul(a, *z->Re, *z->Re);
   mpf_mul(b, *z->Im, *z->Im);

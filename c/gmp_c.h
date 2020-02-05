@@ -7,8 +7,10 @@
 
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
+  
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
+  mpf_set_default_prec(100);
 
   mpf_init(a0);
   mpf_init(b0);
@@ -22,11 +24,11 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_init(div1);
   mpf_init(mul1);
   
-  mpf_set_str(a0, a, 10);
-  mpf_set_str(b0, b, 10);
-  mpf_set_str(c0, c, 10);
-  mpf_set_str(d0, d, 10);
-  mpf_set_str(e0, e, 10);
+  mpf_set_str(a0, a, 0);
+  mpf_set_str(b0, b, 0);
+  mpf_set_str(c0, c, 0);
+  mpf_set_str(d0, d, 0);
+  mpf_set_str(e0, e, 0);
   
   mpf_sub(sub1, a0, b0);
   mpf_sub(sub2, c0, b0);
@@ -34,6 +36,7 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_div(div1, sub1, sub2);
   mpf_mul(mul1, div1, sub3);
   mpf_add(*out, mul1, d0);
+  
 
   mpf_clear(a0);
   mpf_clear(b0);
@@ -49,11 +52,11 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
 
 char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
   
-  int it = strtol(It, NULL, 10);
+  long it = strtol(It, NULL, 10);
   int he = strtol(He, NULL, 10);
   int wi = strtol(Wi, NULL, 10); 
-  int bound = strtol(Bound, NULL, 10); 
-  int zoom = strtol(Zoom, NULL, 10);
+  //int bound = strtol(Bound, NULL, 10); 
+  //int zoom = strtol(Zoom, NULL, 10);
 
   char *result = malloc(wi*he*sizeof(char));
 
@@ -69,9 +72,10 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
       mpf_init(z1);
       mpf_set_str(z0, "0", 10);
       mpf_set_str(z1, "0", 10);
+
       
-      char *str_x = malloc(sizeof(char)*3)
-         , *str_y = malloc(sizeof(char)*3);
+      char *str_x = malloc(sizeof(char)*4)
+         , *str_y = malloc(sizeof(char)*4);
       
       Complex *z = malloc(sizeof(Complex));
       Complex *c = malloc(sizeof(Complex));
@@ -81,11 +85,11 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
 
       mapc(&i, str_x, "0", Wi, Xstt, Xend);
       mapc(&j, str_y, "0", He, Ystt, Yend);
-     
+    
       cc(&z0, &z1, z);
       cc( &i,  &j, c);
-      
-      int k;
+  
+      long k;
       int added = 0;
       
       for (k = 0; k < it; ++k){
@@ -93,14 +97,13 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
         squarec(z);
         addc(z, c);
         
-        int delta = k * 100 / it;        
+        long delta = k * 100 / it;        
         if (checkR(z)>0){
           char temp[3];
-          sprintf(temp, "%i", delta);
+          sprintf(temp, "%li", delta);
           strncat(result, temp, 3);
           strncat(result, ";", 1);
           added = 1;
-          //free(temp);
           break ;
         }
       }
@@ -108,8 +111,8 @@ char *calcc(const char *Xstt, const char *Ystt, const char *Xend, const char *Ye
       
       free(z);
       free(c);
-      free(str_x);
-      free(str_y);
+      //free(str_y);
+      //free(str_x);
       mpf_clear(z0);
       mpf_clear(z1);
       mpf_clear(j);

@@ -248,6 +248,7 @@ function getCoordinates(){
     switchP(false);
     xyPointsP(x, y);
   }else{
+    center = {x, y};
     xypoints(x, y);
   }
 }
@@ -255,6 +256,7 @@ function getCoordinates(){
 function xyPointsP(x, y) {
   let x0 = new BigNumber(x.toString())
     , y0 = new BigNumber(y.toString())
+  center = {x0, y0};
   xypoints(x0, y0);
 }
 

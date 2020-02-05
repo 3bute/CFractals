@@ -47,6 +47,7 @@ var ax
   , proc        = []
   , P           = false
   , julia       = false
+  , center      = null
   , destination = false;
 
 function setup() {
@@ -110,7 +111,8 @@ function getCenter() {
 
 function zoom(i) {
   let crd = coords[coords.length -1]
-    , ctr = getCenter();
+  let ctr = (center) ?
+    center : getCenter();
   if (!P) {
     ctr.xd = (crd.x1 - crd.x0)/i;
     ctr.yd = (crd.y0 - crd.y1)/i;
@@ -135,10 +137,12 @@ function zoom(i) {
     setPrecision(p);
     ctr.xd = crd.x1.minus(crd.x0).div(i);
     ctr.yd = crd.y0.minus(crd.y1).div(i);
-    var crd_x0 = ctr.x.minus(ctr.xd)
-      , crd_x1 = ctr.x.plus(ctr.xd)
-      , crd_y0 = ctr.y.plus(ctr.yd)
-      , crd_y1 = ctr.y.minus(ctr.yd)
+
+    //achtung, inconvenience: elements have 0 index
+    var crd_x0 = ctr.x0.minus(ctr.xd)
+      , crd_x1 = ctr.x0.plus(ctr.xd)
+      , crd_y0 = ctr.y0.plus(ctr.yd)
+      , crd_y1 = ctr.y0.minus(ctr.yd)
 
     coords.push({x0: crd_x0, x1: crd_x1, y0: crd_y0, y1: crd_y1});
     let delta =  crd.x1.minus(crd.x0).div(crd.y0.minus(crd.y1)).minus(width/height).toFixed(3);
