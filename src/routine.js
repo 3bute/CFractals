@@ -48,6 +48,7 @@ var ax
   , P           = false
   , julia       = false
   , center      = null
+  , done        = 0
   , destination = false;
 
 function setup() {
@@ -240,7 +241,19 @@ function getPoints(it, xstt, ystt, xend, yend) {
     background(255 - 125*255/Value);
   }
   show();
+  done = 0;
   getValues(it, xstt, ystt, xend, yend, width / degrad, height / degrad)
+  .then((res)=>{
+       poll('http://localhost:1010' + res);
+  });
+}
+
+function poll(url, pcs) {
+  console.log(url);
+  fetch(url)
+  .then((res)=>{
+    return res.text()
+  })
   .then((res)=>{
     var a = res.split(';')
       , x = 0
@@ -271,7 +284,12 @@ function getPoints(it, xstt, ystt, xend, yend) {
       }
     }
     unshow();
-  });
+    //if (done==(4 - 1)) return;
+    //else {
+    //  done++;
+    //  setTimeout(poll(url), 100);
+    //}
+  })
 }
 
 function getValues(it, xstt, ystt, xend, yend, wi, he){
@@ -289,6 +307,7 @@ function getValues(it, xstt, ystt, xend, yend, wi, he){
       return res.text()
     })
     .then((res)=>{
+      console.log(res);
       resolve(res);
     })
   })
