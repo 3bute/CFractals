@@ -47,6 +47,13 @@ int checkR(Complex *z){
 
   mpf_add(a, a, b);
   mpf_sqrt(a, a); 
+  
+  //turns out these guys are the
+  //hungriest memory eaters in the 
+  //flow
+  mpf_clear(a);
+  mpf_clear(b);
+  mpf_clear(d);
 
   return mpf_cmp(a, d);
 }

@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #ifndef _WIN32
 #include <sys/select.h>
@@ -13,11 +12,13 @@
 #include <string.h>
 #include <stdio.h>
 #include "gmp_c.h"
-#include <unistd.h>
+#include <pthread.h>
 
 #define PORT  1010 
 
 char *buf;
+static pthread_t *thread;
+int running = 0;
 
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
@@ -32,21 +33,27 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
 
+  if (strcmp(url, "/stop") == 0 ){
 
-  if (strcmp(url, "/out") == 0 ){
+    printf("%s\n", "arbeit macht frei!"); 
+    pthread_cancel(*thread);
     
-    printf("%s\n", "incoming /out request, checking buffer..");
-    printf("here is the buffer: %ld\n", strlen(buf)); 
+    char *res = "fertish";
+    response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+    return ret;
 
-
+  }else if (strcmp(url, "/out") == 0 ){
+    
     response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     return ret;
 
   }else{
-    printf("%s\n", "income / request..");
 
+    printf("%s\n", "incoming root request..");
     const char* xstt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "xstt"); 
     const char* ystt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "ystt"); 
     const char* xend = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "xend"); 
@@ -58,14 +65,21 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char* zoom = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "zoom"); 
     
     //allocate memory for the buffer,
-    //that holds all delta values pixelwise,
+    //that holds all deltas in json with corrsd. x and y,
     //additional storage is for separators.
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
-    buf = malloc(sizeof(char)*3*w*h);
+    buf = malloc(sizeof(char)*200*w*h);
+   
+    //try to stop the not yet stopped thread
+    if (running){
+      pthread_cancel(*thread);
+    }
+    thread = malloc(sizeof(pthread_t));
+    running = 1;
 
     //start async calculations
-    calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, zoom);
+    thread = calcc(thread, buf, xstt, ystt, xend, yend, it, wi, he, bound, zoom);
     char *data = "/out";
 
     response = MHD_create_response_from_buffer (strlen(data), data, MHD_RESPMEM_PERSISTENT);

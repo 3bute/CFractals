@@ -39,7 +39,6 @@ var ax
   , bw          = false
   , dark        = false
   , workers     = 8
-  , busy        = false
   , stop        = false
   , magnif      = false
   , h0          = 0
@@ -182,7 +181,12 @@ function setPrecision(p){
   prec = p;
 }
 
-function stopCalc(){stop = true}
+function stopCalc(){
+  console.log('stopping..');
+  fetch('http://localhost:1010/stop')
+  .then((res)=>console.log('requested for stop..'));
+}
+
 function makeSet() {
   destination = false;
   if (julia&&!jPo) {
@@ -248,16 +252,18 @@ function getPoints(it, xstt, ystt, xend, yend) {
   });
 }
 
+var txt = null;
 function poll(url, pcs) {
   fetch(url)
-  .then((res)=>{
+  .then((res, ind)=>{
     return res.text()
   })
   .then((res)=>{
+    txt = res;
     var a = res.split(';')
-      , x = 0
-      , y = 0;
-    for (var n = 0; n < a.length; ++n){
+    a.forEach((crd)=>{
+      if (crd.length<3) return ;
+      crd = JSON.parse(crd);
       if (bw) {
         colorMode(RGB, 255);
         let gradient = delta * 255;
@@ -265,31 +271,28 @@ function poll(url, pcs) {
         else fill(255 - gradient);
       } else {
         colorMode(HSB, 255);
-        if (a[n]==0) {
+        if (crd.d==0) {
           colorMode(RGB);
           fill(125);
         }else{
           colorMode(HSB);
-          let hue = a[n] / 100 * Hue;
+          let hue = crd.d / 100 * Hue;
           fill(hue, sat, Value);
         }
       }
       noStroke();
-      rect(x * degrad, y * degrad, degrad, degrad);
-      ++y;
-      if (n % parseInt(height/degrad) == 0){
-        ++x;
-        y = 0;
-      }
-    }
+      rect(crd.x * degrad, crd.y * degrad, degrad, degrad);
+    })
+
+
+
     unshow();
     if (lastLength==a.length) return ;
     else {
       lastLength = a.length;
-      console.log("scheduling..");
       setTimeout(()=>{
         poll(url)
-      }, 100);
+      }, 200);
     }
   })
 }
@@ -309,7 +312,6 @@ function getValues(it, xstt, ystt, xend, yend, wi, he){
       return res.text()
     })
     .then((res)=>{
-      console.log(res);
       resolve(res);
     })
   })

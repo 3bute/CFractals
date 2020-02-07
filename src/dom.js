@@ -10,11 +10,8 @@ document.addEventListener("keyup", e => {
   }
 });
 document.addEventListener("keydown", event => {
-  if (busy) {
-    if (event.keyCode == 88) {
-      stopCalc();
-    }
-    return;
+  if (event.keyCode == 88) {
+    stopCalc();
   }
   if (event.keyCode == 76) {
     if (degrad < 130) degrad++;
@@ -24,8 +21,8 @@ document.addEventListener("keydown", event => {
     return;
   }
   if (event.keyCode == 79) {
-    if (degrad > 1) degrad--;
-    else degrad = 1;
+    if (degrad > 1) degrad/=1.5;
+    else degrad *= 1.5;
     updateInformation();
     if (P) dropSetP();
     else dropSet();
@@ -37,7 +34,7 @@ document.addEventListener("keydown", event => {
     return;
   }
   if (event.keyCode == 75 && !iPressed) {
-    if (iter > 10) iter -= 10;
+    if (iter > 30) iter -= 30;
     if (P) dropSetP();
     else dropSet();
     iPressed = true;
@@ -48,12 +45,12 @@ document.addEventListener("keydown", event => {
     return;
   }
   if (event.keyCode == 73 && iPressed) {
-    iter += 100;
+    iter += 300;
     updateInformation();
     return;
   }
   if (event.keyCode == 73 && !iPressed) {
-    iter += 10;
+    iter += 30;
     if (P) dropSetP();
     else dropSet();
     iPressed = true;
@@ -274,7 +271,7 @@ function drawMagnifier(){
     dev4.style.height = height/scl + 'px';
     if (!destination) {
       dev4.style.left = ( mouseX - 0.5 * width / scl) + "px";
-      dev4.style.top = ( mouseY - 0.5 * width / scl) + "px";
+      dev4.style.top = ( mouseY - 0.5 * height / scl) + "px";
     }else{
       dev4.style.left = ( 0.5 * (width - width / scl)) + "px";
       dev4.style.top = ( 0.5 * (height - height / scl)) + "px";
@@ -288,10 +285,9 @@ function drawMagnifier(){
 function createControls() {
   cvs.elt.setAttribute(
     "onmouseup",
-    "if (!busy && !dragged && !midbutton) makeSet();"
+    "if (!dragged && !midbutton) makeSet();"
   );
   cvs.elt.addEventListener("mousedown", event => {
-    if (busy) return;
     if (event.button == 1) {
       midbutton = true;
       if (coords.length > 1) coords.pop();
@@ -400,7 +396,6 @@ function createControls() {
 }
 
 function mousemove(event) {
-  if (busy) return;
   var x = mouseX;
   var y = mouseY;
   xM = x;
@@ -448,7 +443,6 @@ function mousemove(event) {
 }
 
 function mousemoveP(event){
-  if (busy) return;
   var x = mouseX;
   var y = mouseY;
   xM = x;
@@ -496,7 +490,7 @@ function mousemoveP(event){
 function createControlsP() {
   cvs.elt.setAttribute(
     "onmouseup",
-    "if (!busy && !dragged && !midbutton) makeSetP();"
+    "if (!dragged && !midbutton) makeSetP();"
   );
   cvs.elt.removeEventListener('mousemove', mousemove);
   cvs.elt.addEventListener("mousemove", mousemoveP);

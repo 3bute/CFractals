@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include "complex_c.h"
 #include <pthread.h>
-#define NUM_THREADS 1 
+#define NUM_THREADS 4 
 
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
 
@@ -20,29 +21,99 @@ typedef struct coords {
    char *buf;
 } coords;
 
-
-void *func(void *args) {
+void *funcTR(void *args) {
   struct coords *crd = (struct coords *) args;
+  //in order to stop thread the cancel type should
+  //be provided as async or deferred
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
   printf("%s\n", "thread has started!"); 
   
   long it = strtol(crd->It, NULL, 10);
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
-  //int bound = strtol(Bound, NULL, 10); 
-  //int zoom = strtol(Zoom, NULL, 10);
-  
-  //printf("He: %s\n", crd->He); 
-  //printf("Wi: %s\n", crd->Wi); 
-  //printf("It: %s\n", crd->It); 
-
-  //printf("it: %ld\n", it);
-  //printf("he: %i\n", he);
-  //printf("wi: %d\n", wi);
   
   int x; 
-  for (x = 0; x < wi; ++x){
+  for (x = wi / 2; x < wi; ++x){
     int y;
-    for (y = 0; y < he; ++y){
+    for (y = he / 2; y > 0; --y){
+      
+      mpf_t i, j, z0, z1;
+      mpf_init(i);
+      mpf_init(j);
+      mpf_init(z0);
+      mpf_init(z1);
+      mpf_set_str(z0, "0", 10);
+      mpf_set_str(z1, "0", 10);
+
+      
+      char *str_x = malloc(sizeof(char)*4)
+         , *str_y = malloc(sizeof(char)*4);
+      
+      Complex *z = malloc(sizeof(Complex));
+      Complex *c = malloc(sizeof(Complex));
+
+      sprintf(str_x, "%i", x);
+      sprintf(str_y, "%i", y);
+
+      mapc(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
+      mapc(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
+    
+      cc(&z0, &z1, z);
+      cc( &i,  &j, c);
+  
+      long k;
+      int added = 0;
+      for (k = 0; k < it; ++k){
+        squarec(z);
+        addc(z, c);
+        long delta = k * 100 / it;        
+        if (checkR(z)>0){
+          added = 1;
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+          pthread_mutex_unlock( &mutex1 );
+          break ;
+        }
+      }
+      if (!added){ 
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+          pthread_mutex_unlock( &mutex1 );
+      }
+      
+      free(z);
+      free(c);
+      free(str_y);
+      free(str_x);
+      mpf_clear(z0);
+      mpf_clear(z1);
+      mpf_clear(j);
+      mpf_clear(i);
+    }
+  }
+  printf("%s\n", "thread has finished!"); 
+  free(crd);
+  return NULL;
+}
+void *funcTL(void *args) {
+  struct coords *crd = (struct coords *) args;
+  //in order to stop thread the cancel type should
+  //be provided as async or deferred
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
+  printf("%s\n", "thread has started!"); 
+  
+  long it = strtol(crd->It, NULL, 10);
+  int he = strtol(crd->He, NULL, 10);
+  int wi = strtol(crd->Wi, NULL, 10); 
+  
+  int x; 
+  for (x = wi / 2; x > 0; --x){
+    int y;
+    for (y = he / 2; y > 0; --y){
      
       mpf_t i, j, z0, z1;
       mpf_init(i);
@@ -76,12 +147,16 @@ void *func(void *args) {
         long delta = k * 100 / it;        
         if (checkR(z)>0){
           added = 1;
-          sprintf(crd->buf + strlen(crd->buf), "%ld;", delta);
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+          pthread_mutex_unlock( &mutex1 );
           break ;
         }
       }
       if (!added){ 
-        sprintf(crd->buf + strlen(crd->buf), "0;");
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+          pthread_mutex_unlock( &mutex1 );
       }
       
       free(z);
@@ -95,6 +170,161 @@ void *func(void *args) {
     }
   }
   printf("%s\n", "thread has finished!"); 
+  free(crd);
+  return NULL;
+}
+
+void *funcBL(void *args) {
+  struct coords *crd = (struct coords *) args;
+  //in order to stop thread the cancel type should
+  //be provided as async or deferred
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
+  printf("%s\n", "thread has started!"); 
+  
+  long it = strtol(crd->It, NULL, 10);
+  int he = strtol(crd->He, NULL, 10);
+  int wi = strtol(crd->Wi, NULL, 10); 
+  
+  int x; 
+  for (x = wi / 2; x > 0; --x){
+    int y;
+    for (y = he / 2; y < he; ++y){
+     
+      mpf_t i, j, z0, z1;
+      mpf_init(i);
+      mpf_init(j);
+      mpf_init(z0);
+      mpf_init(z1);
+      mpf_set_str(z0, "0", 10);
+      mpf_set_str(z1, "0", 10);
+
+      
+      char *str_x = malloc(sizeof(char)*4)
+         , *str_y = malloc(sizeof(char)*4);
+      
+      Complex *z = malloc(sizeof(Complex));
+      Complex *c = malloc(sizeof(Complex));
+
+      sprintf(str_x, "%i", x);
+      sprintf(str_y, "%i", y);
+
+      mapc(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
+      mapc(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
+    
+      cc(&z0, &z1, z);
+      cc( &i,  &j, c);
+  
+      long k;
+      int added = 0;
+      for (k = 0; k < it; ++k){
+        squarec(z);
+        addc(z, c);
+        long delta = k * 100 / it;        
+        if (checkR(z)>0){
+          added = 1;
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+          pthread_mutex_unlock( &mutex1 );
+          break ;
+        }
+      }
+      if (!added){ 
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+          pthread_mutex_unlock( &mutex1 );
+      }
+      
+      free(z);
+      free(c);
+      free(str_y);
+      free(str_x);
+      mpf_clear(z0);
+      mpf_clear(z1);
+      mpf_clear(j);
+      mpf_clear(i);
+    }
+  }
+  printf("%s\n", "thread has finished!"); 
+  free(crd);
+  return NULL;
+}
+
+void *funcBR(void *args) {
+  struct coords *crd = (struct coords *) args;
+  //in order to stop thread the cancel type should
+  //be provided as async or deferred
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
+  printf("%s\n", "thread has started!"); 
+  
+  long it = strtol(crd->It, NULL, 10);
+  int he = strtol(crd->He, NULL, 10);
+  int wi = strtol(crd->Wi, NULL, 10); 
+  
+  int x; 
+  for (x = wi / 2; x < wi; ++x){
+    int y;
+    for (y = he / 2; y < he; ++y){
+     
+      mpf_t i, j, z0, z1;
+      mpf_init(i);
+      mpf_init(j);
+      mpf_init(z0);
+      mpf_init(z1);
+      mpf_set_str(z0, "0", 10);
+      mpf_set_str(z1, "0", 10);
+
+      
+      char *str_x = malloc(sizeof(char)*4)
+         , *str_y = malloc(sizeof(char)*4);
+      
+      Complex *z = malloc(sizeof(Complex));
+      Complex *c = malloc(sizeof(Complex));
+
+      sprintf(str_x, "%i", x);
+      sprintf(str_y, "%i", y);
+
+      mapc(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
+      mapc(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
+    
+      cc(&z0, &z1, z);
+      cc( &i,  &j, c);
+  
+      long k;
+      int added = 0;
+      for (k = 0; k < it; ++k){
+        squarec(z);
+        addc(z, c);
+        long delta = k * 100 / it;        
+        if (checkR(z)>0){
+          added = 1;
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+          pthread_mutex_unlock( &mutex1 );
+          break ;
+        }
+      }
+      if (!added){ 
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+          pthread_mutex_unlock( &mutex1 );
+      }
+      
+      free(z);
+      free(c);
+      free(str_y);
+      free(str_x);
+      mpf_clear(z0);
+      mpf_clear(z1);
+      mpf_clear(j);
+      mpf_clear(i);
+    }
+  }
+  printf("%s\n", "thread has finished!"); 
+  free(crd);
   return NULL;
 }
 
@@ -144,18 +374,13 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_clear(mul1);
 }
 
-void calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
-  
-  
-  pthread_t threads[NUM_THREADS];
+pthread_t *calcc(pthread_t *thread, char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
+  //pthread_t *thread = malloc(sizeof(pthread_t));
   int rc
     , i;
 
   for( i = 0; i < NUM_THREADS; i++ ) {
-      printf("starting thread n. %i\n", i);
-      
       struct coords *crd = (struct coords *) malloc(sizeof(struct coords));
-      
       //malloc is importannt, because it seems like
       //the pointers will be freed before the receiving
       //thread starts parsing values
@@ -182,12 +407,20 @@ void calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, cons
       crd->He = he;
       crd->It = it;
       crd->buf = buf;
-
-      rc = pthread_create(&threads[i], NULL, func, (void *)crd);
+      
+      if (i==0)
+        rc = pthread_create(thread, NULL, funcTR, (void *)crd);
+      if (i==1)
+        rc = pthread_create(thread, NULL, funcBR, (void *)crd);
+      if (i==2)
+        rc = pthread_create(thread, NULL, funcBL, (void *)crd);
+      if (i==3) {
+        rc = pthread_create(thread, NULL, funcTL, (void *)crd);
+      }
       if (rc) {
          printf("Error:unable to create thread, %d\n", rc);
          exit(-1);
       }
    }
-   //pthread_exit(NULL);
+  return thread;
 }
