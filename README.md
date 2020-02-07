@@ -5,10 +5,14 @@ https://fract.glitch.me
 
 Enjoy patterns of nature! The viewer provides minimalistic design, intuitive functionality and easy to use interface.
 
+#######################
 **Check out client-server + GMP arbitrary precision implementation! Currently only POSIX-compatible**
+
 You will also need next things to be set up:
 - Disable CORS in browser or use extensions (that is a temporary issue)
 - C compiler with libgmp, libmicrohttpd and libpthread
+#######################
+
 
 **Features:**
 - Zoom and move the image
