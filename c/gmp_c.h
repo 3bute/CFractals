@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "complex_c.h"
 #include <pthread.h>
+
 #define NUM_THREADS 4 
 
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
@@ -374,10 +375,12 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_clear(mul1);
 }
 
-pthread_t *calcc(pthread_t *thread, char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
-  //pthread_t *thread = malloc(sizeof(pthread_t));
+pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *Zoom){
+  
   int rc
     , i;
+  
+  pthread_t *threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 
   for( i = 0; i < NUM_THREADS; i++ ) {
       struct coords *crd = (struct coords *) malloc(sizeof(struct coords));
@@ -409,18 +412,18 @@ pthread_t *calcc(pthread_t *thread, char *buf, const char *Xstt, const char *Yst
       crd->buf = buf;
       
       if (i==0)
-        rc = pthread_create(thread, NULL, funcTR, (void *)crd);
+        rc = pthread_create(&threads[i], NULL, funcTR, (void *)crd);
       if (i==1)
-        rc = pthread_create(thread, NULL, funcBR, (void *)crd);
+        rc = pthread_create(&threads[i], NULL, funcBR, (void *)crd);
       if (i==2)
-        rc = pthread_create(thread, NULL, funcBL, (void *)crd);
+        rc = pthread_create(&threads[i], NULL, funcBL, (void *)crd);
       if (i==3) {
-        rc = pthread_create(thread, NULL, funcTL, (void *)crd);
+        rc = pthread_create(&threads[i], NULL, funcTL, (void *)crd);
       }
       if (rc) {
          printf("Error:unable to create thread, %d\n", rc);
          exit(-1);
       }
    }
-  return thread;
+  return threads;
 }

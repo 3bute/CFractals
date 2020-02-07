@@ -15,9 +15,10 @@
 #include <pthread.h>
 
 #define PORT  1010 
+#define NUM_THREADS 4 
 
 char *buf;
-static pthread_t *thread;
+pthread_t *threads;
 int running = 0;
 
 static int
@@ -36,7 +37,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (strcmp(url, "/stop") == 0 ){
 
     printf("%s\n", "arbeit macht frei!"); 
-    pthread_cancel(*thread);
+    int i = 0;
+    for ( i = 0; i < NUM_THREADS; i++) {
+      pthread_cancel(threads[i]);
+    }
     
     char *res = "fertish";
     response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
@@ -70,16 +74,19 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
     buf = malloc(sizeof(char)*200*w*h);
-   
-    //try to stop the not yet stopped thread
+    
+    //try to stop them all
     if (running){
-      pthread_cancel(*thread);
+      int i = 0;
+      for ( i = 0; i < NUM_THREADS; i++) {
+        pthread_cancel(threads[i]);
+      }
+    }else{
+      running = 1;
     }
-    thread = malloc(sizeof(pthread_t));
-    running = 1;
 
     //start async calculations
-    thread = calcc(thread, buf, xstt, ystt, xend, yend, it, wi, he, bound, zoom);
+    threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, zoom);
     char *data = "/out";
 
     response = MHD_create_response_from_buffer (strlen(data), data, MHD_RESPMEM_PERSISTENT);
