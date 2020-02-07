@@ -6,6 +6,7 @@
 #include <pthread.h>
 #define NUM_THREADS 1 
 
+
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
 
 typedef struct coords {
@@ -21,13 +22,22 @@ typedef struct coords {
 
 
 void *func(void *args) {
-  struct coords *crd = args;
-   
+  struct coords *crd = (struct coords *) args;
+  printf("%s\n", "thread has started!"); 
+  
   long it = strtol(crd->It, NULL, 10);
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
   //int bound = strtol(Bound, NULL, 10); 
   //int zoom = strtol(Zoom, NULL, 10);
+  
+  //printf("He: %s\n", crd->He); 
+  //printf("Wi: %s\n", crd->Wi); 
+  //printf("It: %s\n", crd->It); 
+
+  //printf("it: %ld\n", it);
+  //printf("he: %i\n", he);
+  //printf("wi: %d\n", wi);
   
   int x; 
   for (x = 0; x < wi; ++x){
@@ -60,24 +70,19 @@ void *func(void *args) {
   
       long k;
       int added = 0;
-      
       for (k = 0; k < it; ++k){
-        
         squarec(z);
         addc(z, c);
-        
         long delta = k * 100 / it;        
         if (checkR(z)>0){
-          char temp[3];
-          sprintf(temp, "%li", delta);
-          printf("%s\n", temp);
-          strncat(crd->buf, temp, 3);
-          strncat(crd->buf, ";", 1);
           added = 1;
+          sprintf(crd->buf + strlen(crd->buf), "%ld;", delta);
           break ;
         }
       }
-      if (!added) strncat(crd->buf, "0;", 2); 
+      if (!added){ 
+        sprintf(crd->buf + strlen(crd->buf), "0;");
+      }
       
       free(z);
       free(c);
@@ -89,6 +94,7 @@ void *func(void *args) {
       mpf_clear(i);
     }
   }
+  printf("%s\n", "thread has finished!"); 
   return NULL;
 }
 
@@ -144,17 +150,37 @@ void calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, cons
   pthread_t threads[NUM_THREADS];
   int rc
     , i;
+
   for( i = 0; i < NUM_THREADS; i++ ) {
       printf("starting thread n. %i\n", i);
-      struct coords *crd = malloc(sizeof(coords));
       
-      crd->Xstt = Xstt;
-      crd->Ystt = Ystt;
-      crd->Xend = Xend;
-      crd->Yend = Yend;
-      crd->Wi = Wi;
-      crd->He = He;
-      crd->It = It;
+      struct coords *crd = (struct coords *) malloc(sizeof(struct coords));
+      
+      //malloc is importannt, because it seems like
+      //the pointers will be freed before the receiving
+      //thread starts parsing values
+      char * xstt = malloc(strlen(Xstt) + 1);
+      strcpy(xstt, Xstt);
+      char * ystt = malloc(strlen(Ystt) + 1);
+      strcpy(ystt, Ystt);
+      char * xend = malloc(strlen(Xend) + 1);
+      strcpy(xend, Xend);
+      char * yend = malloc(strlen(Yend) + 1);
+      strcpy(yend, Yend);
+      char * wi = malloc(strlen(Wi) + 1);
+      strcpy(wi, Wi);
+      char * he = malloc(strlen(He) + 1);
+      strcpy(he, He);
+      char * it = malloc(strlen(It) + 1);
+      strcpy(it, It);
+      
+      crd->Xstt = xstt;
+      crd->Ystt = ystt;
+      crd->Xend = xend;
+      crd->Yend = yend;
+      crd->Wi = wi;
+      crd->He = he;
+      crd->It = it;
       crd->buf = buf;
 
       rc = pthread_create(&threads[i], NULL, func, (void *)crd);
@@ -163,5 +189,5 @@ void calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, cons
          exit(-1);
       }
    }
-   pthread_exit(NULL);
+   //pthread_exit(NULL);
 }

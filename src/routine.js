@@ -48,7 +48,7 @@ var ax
   , P           = false
   , julia       = false
   , center      = null
-  , done        = 0
+  , lastLength  = 0
   , destination = false;
 
 function setup() {
@@ -241,15 +241,14 @@ function getPoints(it, xstt, ystt, xend, yend) {
     background(255 - 125*255/Value);
   }
   show();
-  done = 0;
   getValues(it, xstt, ystt, xend, yend, width / degrad, height / degrad)
   .then((res)=>{
+       lastLength = 0;
        poll('http://localhost:1010' + res);
   });
 }
 
 function poll(url, pcs) {
-  console.log(url);
   fetch(url)
   .then((res)=>{
     return res.text()
@@ -284,11 +283,14 @@ function poll(url, pcs) {
       }
     }
     unshow();
-    //if (done==(4 - 1)) return;
-    //else {
-    //  done++;
-    //  setTimeout(poll(url), 100);
-    //}
+    if (lastLength==a.length) return ;
+    else {
+      lastLength = a.length;
+      console.log("scheduling..");
+      setTimeout(()=>{
+        poll(url)
+      }, 100);
+    }
   })
 }
 
