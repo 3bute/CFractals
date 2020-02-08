@@ -124,8 +124,8 @@ void *funcBR(void *args) {
       mpf_clear(i);
     }
   }
-  printf("%s\n", "thread has finished!"); 
   free(crd);
+  printf("%s\n", "thread has finished!"); 
   return NULL;
 }
 

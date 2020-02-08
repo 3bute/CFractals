@@ -49,7 +49,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     return ret;
 
   }else if (strcmp(url, "/out") == 0 ){
-    
+   
     response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
@@ -93,7 +93,6 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     //allocate memory for the buffer,
     //that holds all deltas in json with corrsd. x and y,
     //additional storage is for separators.
-    buf = NULL;
     buf = malloc(sizeof(char)*300*w*h);
     
     //start async calculations
