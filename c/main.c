@@ -38,9 +38,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
     printf("%s\n", "arbeit macht frei!"); 
     int i = 0;
-    for ( i = 0; i < NUM_THREADS; i++) {
-      pthread_cancel(threads[i]);
-    }
+    //leads to crash on the immediate next step 
+    //for ( i = 0; i < NUM_THREADS; i++) {
+    //  pthread_cancel(threads[i]);
+    //}
     
     char *res = "fertish";
     response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
@@ -79,6 +80,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
+    printf("%d\n", w);
 
     //try to stop them all
     if (running){
