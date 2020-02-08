@@ -263,7 +263,9 @@ function poll(url, pcs) {
     var a = res.split(';')
     a.forEach((crd)=>{
       if (crd.length<3) return ;
-      crd = JSON.parse(crd);
+      try {
+        crd = JSON.parse(crd);
+      } catch (e) {}
       if (bw) {
         colorMode(RGB, 255);
         let gradient = delta * 255;
@@ -292,7 +294,7 @@ function poll(url, pcs) {
       lastLength = a.length;
       setTimeout(()=>{
         poll(url)
-      }, 200);
+      }, 100);
     }
   })
 }
@@ -306,8 +308,7 @@ function getValues(it, xstt, ystt, xend, yend, wi, he){
         + '&yend=' + yend
         + '&wi=' + parseInt(wi)
         + '&he=' + parseInt(he)
-        + '&bound=' + 2
-        + '&zoom=' + 1)
+        + '&bound=' + 2)
     .then((res)=>{
       return res.text()
     })

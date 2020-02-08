@@ -53,6 +53,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
+
     return ret;
 
   }else{
@@ -68,13 +69,17 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char* bound = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "bound"); 
     const char* zoom = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "zoom"); 
     
-    //allocate memory for the buffer,
-    //that holds all deltas in json with corrsd. x and y,
-    //additional storage is for separators.
+    printf("%s\n", xstt);
+    printf("%s\n", ystt);
+    printf("%s\n", xend);
+    printf("%s\n", yend);
+    printf("%s\n", wi);
+    printf("%s\n", he);
+    printf("%s\n", it);
+    
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
-    buf = malloc(sizeof(char)*200*w*h);
-    
+
     //try to stop them all
     if (running){
       int i = 0;
@@ -85,8 +90,14 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       running = 1;
     }
 
+    //allocate memory for the buffer,
+    //that holds all deltas in json with corrsd. x and y,
+    //additional storage is for separators.
+    buf = NULL;
+    buf = malloc(sizeof(char)*300*w*h);
+    
     //start async calculations
-    threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, zoom);
+    threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
     char *data = "/out";
 
     response = MHD_create_response_from_buffer (strlen(data), data, MHD_RESPMEM_PERSISTENT);
