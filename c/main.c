@@ -18,6 +18,7 @@
 #define NUM_THREADS 4 
 
 char *buf;
+int creg;
 pthread_t *threads;
 
 static int
@@ -35,16 +36,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (strcmp(url, "/stop") == 0 ){
 
-    //printf("%s\n", "arbeit macht frei!"); 
-    //if (busy!=0){
-    //  int i = 0;
-    //  for ( i = 0; i < NUM_THREADS; i++) {
-    //    pthread_cancel(threads[i]);
-    //  }
-    //  busy = 0;
-    //}
-
-    
+    printf("%s\n", "arbeit macht frei!"); 
+    stop = 1;
     
     char *res = "fertish";
     response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
@@ -53,8 +46,15 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     return ret;
 
   }else if (strcmp(url, "/out") == 0 ){
-    char *res;
-    response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
+    if (creg) {
+      printf("%s\n", "yess");
+      char *res;
+      res = malloc(1);
+      res = "0";
+      response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
+    }else{
+      response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
+    }
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     return ret;
@@ -81,17 +81,14 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
-
-    //printf("%s\n", "freeing..");
-    //int i = 0;
-    //for ( i = 0; i < NUM_THREADS; i++) {
-    //  pthread_cancel(threads[i]);
-    //}
     
     //reject if threads are busy
     if (busy == 0){
+      creg = 1;
       buf = malloc (100 * w * h);
+      stop = 0;
       threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
+      creg = 0;
     }else{
       printf("%s\n", "busy :/");
     }

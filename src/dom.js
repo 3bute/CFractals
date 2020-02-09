@@ -96,7 +96,7 @@ document.addEventListener("keydown", event => {
     if (confirm('Write coordinates on the canvas?')) {
       drawCoordinates(getCenter());
     }
-    saveCanvas(cvs, "mandelbrot", "jpg");
+    //saveCanvas(cvs, "mandelbrot", "jpg");
     return;
   }
   if (event.keyCode == 17) {

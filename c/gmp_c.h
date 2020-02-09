@@ -6,7 +6,8 @@
 #include <pthread.h>
 
 #define NUM_THREADS 4 
-int busy;
+volatile int busy;
+volatile int stop;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
@@ -34,9 +35,7 @@ void *func(void *args) {
   //in order to stop thread the cancel type should
   //be provided as async or deferred
   
-  pthread_mutex_lock( &mutex1 );
   busy++;
-  pthread_mutex_unlock( &mutex1 );
   
   printf("%s\n", "thread has started!"); 
   
@@ -74,6 +73,11 @@ void *func(void *args) {
   for (x = sx;  x < ex; ++x){
     int y;
     for (y = sy; y < ey; ++y){
+      if (stop) {
+        busy--;
+        pthread_exit(0);
+        return 0;
+      }
      
       mpf_t i, j, z0, z1;
       mpf_init(i);
@@ -130,9 +134,9 @@ void *func(void *args) {
     }
   }
   free(crd);
+  busy--;
   pthread_mutex_lock( &mutex1 );
   sprintf(crd->buf + strlen(crd->buf), "f");
-  busy--;
   pthread_mutex_unlock( &mutex1 );
   printf("%s\n", "thread has finished!"); 
   return NULL;
