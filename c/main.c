@@ -19,7 +19,6 @@
 
 char *buf;
 pthread_t *threads;
-int running = 0;
 
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
@@ -36,12 +35,16 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
   if (strcmp(url, "/stop") == 0 ){
 
-    printf("%s\n", "arbeit macht frei!"); 
-    int i = 0;
-    //leads to crash on the immediate next step 
-    //for ( i = 0; i < NUM_THREADS; i++) {
-    //  pthread_cancel(threads[i]);
+    //printf("%s\n", "arbeit macht frei!"); 
+    //if (busy!=0){
+    //  int i = 0;
+    //  for ( i = 0; i < NUM_THREADS; i++) {
+    //    pthread_cancel(threads[i]);
+    //  }
+    //  busy = 0;
     //}
+
+    
     
     char *res = "fertish";
     response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
@@ -50,15 +53,13 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     return ret;
 
   }else if (strcmp(url, "/out") == 0 ){
-   
+    char *res;
     response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
-
     return ret;
 
   }else{
-
     printf("%s\n", "incoming root request..");
     const char* xstt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "xstt"); 
     const char* ystt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "ystt"); 
@@ -70,35 +71,31 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char* bound = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "bound"); 
     const char* zoom = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "zoom"); 
     
-    printf("%s\n", xstt);
-    printf("%s\n", ystt);
-    printf("%s\n", xend);
-    printf("%s\n", yend);
-    printf("%s\n", wi);
-    printf("%s\n", he);
-    printf("%s\n", it);
+    //printf("%s\n", xstt);
+    //printf("%s\n", ystt);
+    //printf("%s\n", xend);
+    //printf("%s\n", yend);
+    //printf("%s\n", wi);
+    //printf("%s\n", he);
+    //printf("%s\n", it);
     
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
-    printf("%d\n", w);
 
-    //try to stop them all
-    if (running){
-      int i = 0;
-      for ( i = 0; i < NUM_THREADS; i++) {
-        pthread_cancel(threads[i]);
-      }
-    }else{
-      running = 1;
-    }
-
-    //allocate memory for the buffer,
-    //that holds all deltas in json with corrsd. x and y,
-    //additional storage is for separators.
-    buf = malloc(sizeof(char)*300*w*h);
+    //printf("%s\n", "freeing..");
+    //int i = 0;
+    //for ( i = 0; i < NUM_THREADS; i++) {
+    //  pthread_cancel(threads[i]);
+    //}
     
-    //start async calculations
-    threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
+    //reject if threads are busy
+    if (busy == 0){
+      buf = malloc (100 * w * h);
+      threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
+    }else{
+      printf("%s\n", "busy :/");
+    }
+    
     char *data = "/out";
 
     response = MHD_create_response_from_buffer (strlen(data), data, MHD_RESPMEM_PERSISTENT);

@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 #define NUM_THREADS 4 
-
+int busy;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
@@ -26,12 +26,17 @@ typedef struct coords {
    char *buf;
 } coords;
 
-void *funcBR(void *args) {
+void *func(void *args) {
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
   struct coords *crd = (struct coords *) args;
   //in order to stop thread the cancel type should
   //be provided as async or deferred
-  int prevType;
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
+  pthread_mutex_lock( &mutex1 );
+  busy++;
+  pthread_mutex_unlock( &mutex1 );
   
   printf("%s\n", "thread has started!"); 
   
@@ -125,6 +130,10 @@ void *funcBR(void *args) {
     }
   }
   free(crd);
+  pthread_mutex_lock( &mutex1 );
+  sprintf(crd->buf + strlen(crd->buf), "f");
+  busy--;
+  pthread_mutex_unlock( &mutex1 );
   printf("%s\n", "thread has finished!"); 
   return NULL;
 }
@@ -135,7 +144,7 @@ void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char
   
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
-  mpf_set_default_prec(100);
+  mpf_set_default_prec(200);
 
   mpf_init(a0);
   mpf_init(b0);
@@ -180,7 +189,10 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
   int rc
     , i;
   
+  
   pthread_t *threads = malloc(sizeof(pthread_t) * NUM_THREADS);
+
+  busy = 0;
 
   for( i = 0; i < NUM_THREADS; i++ ) {
       struct coords *crd = (struct coords *) malloc(sizeof(struct coords));
@@ -234,7 +246,7 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
         crd->end_y = 0;
       }
       
-      rc = pthread_create(&threads[i], NULL, funcBR, (void *)crd);
+      rc = pthread_create(&threads[i], NULL, func, (void *)crd);
       if (rc) {
          printf("Error:unable to create thread, %d\n", rc);
          exit(-1);
