@@ -91,7 +91,7 @@ document.addEventListener("keydown", event => {
     if (confirm('Write coordinates on the canvas?')) {
       drawCoordinates(getCenter());
     }
-    //saveCanvas(cvs, "mandelbrot", "jpg");
+    saveCanvas(cvs, "mandelbrot", "jpg");
     return;
   }
   if (event.keyCode == 17) {
@@ -492,6 +492,19 @@ function updateInformation(currentX, currentY) {
 }
 
 function drawCoordinates() {
-  dev5.children[0].innerHTML = "<span>x:" + currentX + "</span>";
-  dev5.children[1].innerHTML = "<span>y:" + currentY + "</span>";
+
+  let x = (currentX < 0) ? currentX : ("+" + currentX);
+  let y = (currentY < 0) ? currentY : ("+" + currentY);
+
+  textSize(15);
+  textFont('Monospace');
+  fill(255);
+
+  rect(5, (height - 40), textWidth(x), 16);
+  rect(5, (height - 20), textWidth(y), 16);
+
+  fill(0);
+  text(x, 5, height - 25);
+  text(y, 5, height - 5);
+
 }
