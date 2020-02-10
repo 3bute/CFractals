@@ -156,6 +156,8 @@ void *func(void *args) {
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
+  printf("%ld\n", strlen(d));
+  mpf_set_default_prec(200);
 
   mpf_init(a0);
   mpf_init(b0);

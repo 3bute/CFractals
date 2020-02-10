@@ -223,10 +223,10 @@ function makeSet() {
 function dropSet() {
   getPoints(
     iter,
-    Number(coords[coords.length - 1].x0),
-    Number(coords[coords.length - 1].y0),
-    Number(coords[coords.length - 1].x1),
-    Number(coords[coords.length - 1].y1)
+    coords[coords.length - 1].x0,
+    coords[coords.length - 1].y0,
+    coords[coords.length - 1].x1,
+    coords[coords.length - 1].y1
   );
 }
 
@@ -318,6 +318,7 @@ function draw_set() {
 }
 
 function getValues(it, xstt, ystt, xend, yend, wi, he){
+  console.log(xstt, yend, xend);
   return new Promise((resolve, reject)=>{
     fetch('http://localhost:1010/coordinates?it=' + it
         + '&xstt=' + xstt
