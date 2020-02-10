@@ -7,48 +7,6 @@
 
 #define NUM_THREADS 4 
 
-typedef struct {
-  int *array;
-  size_t used;
-  size_t size;
-} Array;
-
-Array *arrp;
-volatile int busy;
-volatile int stop;
-
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-
-void initArray(Array *a, size_t initialSize) {
-  a->array = (int *)malloc(initialSize * sizeof(int));
-  a->used = 0;
-  a->size = initialSize;
-}
-
-void insertArray(Array *a, int element) {
-  if (a->used == a->size) {
-    a->size *= 2;
-    a->array = (int *)realloc(a->array, a->size * sizeof(int));
-  }
-  a->array[a->used++] = element;
-}
-
-void deleteFromArray(Array *a, int i){
-  for (++i; i < a->used; ++i) {
-    a->array[i-1] = a->array[i];
-  }
-  a->used--;
-}
-
-void freeArray(Array *a) {
-  free(a->array);
-  a->array = NULL;
-  a->used = a->size = 0;
-}
-
-
-void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
-
 typedef struct coords {
    const char *Xstt;
    const char *Ystt;
@@ -60,6 +18,13 @@ typedef struct coords {
    int idx;
    char *buf;
 } coords;
+
+volatile int busy;
+volatile int stop;
+
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+
+void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
 
 void *func(void *args) {
   int prevType;
@@ -74,20 +39,33 @@ void *func(void *args) {
   long it = strtol(crd->It, NULL, 10);
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
-  while(arrp->used > 0){
-    
-    int idx = rand() % arrp->used;
-    int x = arrp->array[idx];
-    deleteFromArray(arrp, idx);
+  
+  int shortest = ( wi > he ) ? he : wi
+    , half = shortest / 2;
 
-    int y; 
-    for (y = 0; y < he; ++y){
+  //allocate start & end point on diagonal
+  int n   = half - (crd->idx * half / NUM_THREADS )
+    , end = half - ((crd->idx + 1) * half / NUM_THREADS );
+
+  for (n; n > end; --n) {
+
+    int  x     = n
+      , _x     = n
+      ,  y     = n
+      , _y     = n
+      , done   = 0
+      , top    = 0
+      , right  = 0
+      , bottom = 0
+      , left   = 0;
+
+    while (!done) {
       if (stop) {
         busy--;
         pthread_exit(0);
         return 0;
       }
-     
+      
       mpf_t i, j, z0, z1;
       mpf_init(i);
       mpf_init(j);
@@ -108,10 +86,10 @@ void *func(void *args) {
 
       mapc(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
       mapc(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
-    
+      
       cc(&z0, &z1, z);
       cc( &i,  &j, c);
-  
+    
       long k;
       int added = 0;
       for (k = 0; k < it; ++k){
@@ -140,8 +118,27 @@ void *func(void *args) {
       mpf_clear(z1);
       mpf_clear(j);
       mpf_clear(i);
+
+      //spiral drawing!
+      //
+      if (!top) {
+        if (x < (wi - _x)) ++x;
+        else top = 1;
+      }else if (!right) {
+        if (y < (he - _y)) ++y;
+        else right = 1;
+      }else if (!bottom) {
+        if (x > _x) --x;
+        else bottom = 1;
+      }else if (!left) {
+        if (y > _y) --y;
+        else left = 1;
+      }else{
+        done = 1;
+      }
     }
   }
+
   free(crd);
   busy--;
   pthread_mutex_lock( &mutex1 );
@@ -202,9 +199,7 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
     , i;
   
   pthread_t *threads = malloc(sizeof(pthread_t) * NUM_THREADS);
-
   busy = 0;
-  
   //malloc is importannt, because it seems like
   //the pointers will be freed before the receiving
   //thread starts parsing values
@@ -225,12 +220,6 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
   
   int h = strtol(he, NULL, 10);
   int w = strtol(wi, NULL, 10); 
-
-  arrp = malloc(sizeof(Array));
-  initArray(arrp, w);
-  for (i = 0; i < w; i++) {
-    insertArray(arrp, i);
-  }
 
   for( i = 0; i < NUM_THREADS; i++ ) {
       struct coords *crd = (struct coords *) malloc(sizeof(struct coords));

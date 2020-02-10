@@ -17,7 +17,6 @@
 #include <regex.h>
 
 #define PORT  1010 
-#define NUM_THREADS 4 
 
 char *buf;
 pthread_t *threads;

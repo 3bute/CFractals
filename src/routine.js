@@ -279,12 +279,16 @@ function poll(url) {
       rect(crd.x * degrad, crd.y * degrad, degrad, degrad);
     })
     unshow();
-    if (lastLength==a.length) return ;
+    if (lastLength==a.length){
+      console.log('finally');
+      return ;
+    }
     else {
+      console.log('not yet');
       lastLength = a.length;
       setTimeout(()=>{
         poll(url)
-      }, 100);
+      }, 150);
     }
   })
 }
@@ -318,7 +322,6 @@ function draw_set() {
 }
 
 function getValues(it, xstt, ystt, xend, yend, wi, he){
-  console.log(xstt, yend, xend);
   return new Promise((resolve, reject)=>{
     fetch('http://localhost:1010/coordinates?it=' + it
         + '&xstt=' + xstt
