@@ -18,7 +18,6 @@
 #define NUM_THREADS 4 
 
 char *buf;
-int creg;
 pthread_t *threads;
 
 static int
@@ -38,7 +37,6 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
     printf("%s\n", "arbeit macht frei!"); 
     stop = 1;
-    
     char *res = "fertish";
     response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
@@ -46,15 +44,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     return ret;
 
   }else if (strcmp(url, "/out") == 0 ){
-    if (creg) {
-      printf("%s\n", "yess");
-      char *res;
-      res = malloc(1);
-      res = "0";
-      response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
-    }else{
-      response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
-    }
+
+    response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     return ret;
@@ -84,11 +75,11 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     
     //reject if threads are busy
     if (busy == 0){
-      creg = 1;
       buf = malloc (100 * w * h);
+      stop = 1;
+      sleep(0.5);
       stop = 0;
       threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
-      creg = 0;
     }else{
       printf("%s\n", "busy :/");
     }

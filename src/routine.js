@@ -38,7 +38,6 @@ var ax
   , prevColors  = null
   , bw          = false
   , dark        = false
-  , workers     = 8
   , stop        = false
   , magnif      = false
   , h0          = 0
@@ -48,6 +47,7 @@ var ax
   , julia       = false
   , center      = null
   , lastLength  = 0
+  , img  = 0
   , destination = false;
 
 function setup() {
@@ -91,7 +91,7 @@ function xypoints(x, y) {
     crd.x1 = crd.x1.plus(dtcx);
     crd.y0 = crd.y0.plus(dtcy);
     crd.y1 = crd.y1.plus(dtcy);
-    dropSetP();
+    dropSet();
   }
 }
 
@@ -122,7 +122,6 @@ function zoom(i) {
     crd.y1 = ctr.y - ctr.yd;
     if (Math.abs((crd.x1 - crd.x0)/(crd.y0 - crd.y1) - width/height) > 0.01) {
       switchP(true);
-      alert('switched to high precision, the speed will drop significantly :\(');
       return ;
     }
     dropSet();
@@ -150,19 +149,15 @@ function zoom(i) {
       prec+=2;
       setPrecision(prec);
     }
-    dropSetP();
+    dropSet();
   }
 }
 
-function switchP(draw) {
+function switchP(draw_set) {
   if (!P) {
-    degrad = 30;
-    workers = 64;
     if (!prec) prec = 17;
-    setupP(draw);
+    setupP(draw_set);
   }else{
-    degrad = 10;
-    workers = 8;
     let crd = coords[coords.length-1];
     coords.push({
       x0: Number(crd.x0.toFixed(16)),
@@ -218,7 +213,6 @@ function makeSet() {
 
   if (Math.abs((xend - xstt)/(ystt - yend) - width/height) > 0.01) {
     switchP(true);
-    alert('switched to high precision, the speed will drop significantly :\(');
     return ;
   }
 
@@ -252,14 +246,13 @@ function getPoints(it, xstt, ystt, xend, yend) {
   });
 }
 
-var txt = null;
-function poll(url, pcs) {
+function poll(url) {
   fetch(url)
   .then((res, ind)=>{
     return res.text()
   })
   .then((res)=>{
-    txt = res;
+    img = res;
     var a = res.split(';')
     a.forEach((crd)=>{
       if (crd.length<3) return ;
@@ -285,9 +278,6 @@ function poll(url, pcs) {
       noStroke();
       rect(crd.x * degrad, crd.y * degrad, degrad, degrad);
     })
-
-
-
     unshow();
     if (lastLength==a.length) return ;
     else {
@@ -296,6 +286,34 @@ function poll(url, pcs) {
         poll(url)
       }, 100);
     }
+  })
+}
+
+function draw_set() {
+  var a = img.split(';')
+  a.forEach((crd)=>{
+    if (crd.length<3) return ;
+    try {
+      crd = JSON.parse(crd);
+    } catch (e) {}
+    if (bw) {
+      colorMode(RGB, 255);
+      let gradient = delta * 255;
+      if (dark) fill(gradient);
+      else fill(255 - gradient);
+    } else {
+      colorMode(HSB, 255);
+      if (crd.d==0) {
+        colorMode(RGB);
+        fill(125);
+      }else{
+        colorMode(HSB);
+        let hue = crd.d / 100 * Hue;
+        fill(hue, sat, Value);
+      }
+    }
+    noStroke();
+    rect(crd.x * degrad, crd.y * degrad, degrad, degrad);
   })
 }
 
@@ -318,7 +336,7 @@ function getValues(it, xstt, ystt, xend, yend, wi, he){
   })
 }
 
-function setupP(draw) {
+function setupP(draw_set) {
   BigNumber.set({ DECIMAL_PLACES: prec });
   let crd = coords[coords.length-1];
   coords.push({ x0: new BigNumber(crd.x0),
@@ -326,9 +344,15 @@ function setupP(draw) {
                 y0: new BigNumber(crd.y0),
   		          y1: new BigNumber(crd.y1)});
   createControlsP();
-  if (draw) {
-    dropSetP();
-  }
+}
+
+function mapFloat(a, b, c, d, e){
+  let s0 = new BigNumber(b);
+  let e0 = new BigNumber(c);
+  let s1 = new BigNumber(d);
+  let e1 = new BigNumber(e);
+  let v = new BigNumber(a);
+  return new BigNumber(v.minus(s0).div(e0.minus(s0)).times(e1.minus(s1)).plus(s1).toFixed(prec));
 }
 
 function makeSetP() {
@@ -337,7 +361,7 @@ function makeSetP() {
     jPo = {};
     jPo.x = currentX;
     jPo.y = currentY;
-    dropSetP();
+    dropSet();
     return ;
   }
   zoomed += scl;
@@ -365,26 +389,5 @@ function makeSetP() {
     setPrecision(prec);
   }
   coords.push({ x0: xstt, y0: ystt, x1: xend, y1: yend });
-  dropSetP();
-}
-
-function dropSetP() {
-  let crd = coords[coords.length-1];
-  got_response = false;
-  getPoints(
-    iter,
-    new BigNumber(crd.x0),
-    new BigNumber(crd.y0),
-    new BigNumber(crd.x1),
-    new BigNumber(crd.y1)
-  );
-}
-
-function mapFloat(a, b, c, d, e){
-  let s0 = new BigNumber(b);
-  let e0 = new BigNumber(c);
-  let s1 = new BigNumber(d);
-  let e1 = new BigNumber(e);
-  let v = new BigNumber(a);
-  return new BigNumber(v.minus(s0).div(e0.minus(s0)).times(e1.minus(s1)).plus(s1).toFixed(prec));
+  dropSet();
 }

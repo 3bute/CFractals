@@ -6,9 +6,46 @@
 #include <pthread.h>
 
 #define NUM_THREADS 4 
+
+typedef struct {
+  int *array;
+  size_t used;
+  size_t size;
+} Array;
+
+Array *arrp;
 volatile int busy;
 volatile int stop;
+
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+
+void initArray(Array *a, size_t initialSize) {
+  a->array = (int *)malloc(initialSize * sizeof(int));
+  a->used = 0;
+  a->size = initialSize;
+}
+
+void insertArray(Array *a, int element) {
+  if (a->used == a->size) {
+    a->size *= 2;
+    a->array = (int *)realloc(a->array, a->size * sizeof(int));
+  }
+  a->array[a->used++] = element;
+}
+
+void deleteFromArray(Array *a, int i){
+  for (++i; i < a->used; ++i) {
+    a->array[i-1] = a->array[i];
+  }
+  a->used--;
+}
+
+void freeArray(Array *a) {
+  free(a->array);
+  a->array = NULL;
+  a->used = a->size = 0;
+}
+
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
 
@@ -20,10 +57,7 @@ typedef struct coords {
    const char *Wi;
    const char *He;
    const char *It;
-   int mid_x;
-   int mid_y;
-   int end_x;
-   int end_y;
+   int idx;
    char *buf;
 } coords;
 
@@ -36,43 +70,18 @@ void *func(void *args) {
   //be provided as async or deferred
   
   busy++;
-  
   printf("%s\n", "thread has started!"); 
-  
   long it = strtol(crd->It, NULL, 10);
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
-  
-  int sx, sy, ex, ey;
-  
-  int mid_x = crd->mid_x; 
-  int mid_y = crd->mid_y; 
-  int end_x = crd->end_x; 
-  int end_y = crd->end_y; 
-  
-  //the simplest solution for
-  //asynchronous processing of
-  //interchangeable coordinates
-  if (mid_x < end_x) {
-    sx = mid_x;
-    ex = end_x;
-  }else{
-    sx = end_x;
-    ex = mid_x;
-  }
-  
-  if (mid_y < end_y) {
-    sy = mid_y;
-    ey = end_y;
-  }else{
-    sy = end_y;
-    ey = mid_y;
-  }
- 
-  int x; 
-  for (x = sx;  x < ex; ++x){
-    int y;
-    for (y = sy; y < ey; ++y){
+  while(arrp->used > 0){
+    
+    int idx = rand() % arrp->used;
+    int x = arrp->array[idx];
+    deleteFromArray(arrp, idx);
+
+    int y; 
+    for (y = 0; y < he; ++y){
       if (stop) {
         busy--;
         pthread_exit(0);
@@ -145,10 +154,8 @@ void *func(void *args) {
 
 
 void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
-  
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
-  mpf_set_default_prec(200);
 
   mpf_init(a0);
   mpf_init(b0);
@@ -193,36 +200,39 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
   int rc
     , i;
   
-  
   pthread_t *threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 
   busy = 0;
+  
+  //malloc is importannt, because it seems like
+  //the pointers will be freed before the receiving
+  //thread starts parsing values
+  char * xstt = malloc(strlen(Xstt) + 1);
+  strcpy(xstt, Xstt);
+  char * ystt = malloc(strlen(Ystt) + 1);
+  strcpy(ystt, Ystt);
+  char * xend = malloc(strlen(Xend) + 1);
+  strcpy(xend, Xend);
+  char * yend = malloc(strlen(Yend) + 1);
+  strcpy(yend, Yend);
+  char * it = malloc(strlen(It) + 1);
+  strcpy(it, It);
+  char * wi = malloc(strlen(Wi) + 1);
+  strcpy(wi, Wi);
+  char * he = malloc(strlen(He) + 1);
+  strcpy(he, He);
+  
+  int h = strtol(he, NULL, 10);
+  int w = strtol(wi, NULL, 10); 
+
+  arrp = malloc(sizeof(Array));
+  initArray(arrp, w);
+  for (i = 0; i < w; i++) {
+    insertArray(arrp, i);
+  }
 
   for( i = 0; i < NUM_THREADS; i++ ) {
       struct coords *crd = (struct coords *) malloc(sizeof(struct coords));
-      //malloc is importannt, because it seems like
-      //the pointers will be freed before the receiving
-      //thread starts parsing values
-      char * xstt = malloc(strlen(Xstt) + 1);
-      strcpy(xstt, Xstt);
-      char * ystt = malloc(strlen(Ystt) + 1);
-      strcpy(ystt, Ystt);
-      char * xend = malloc(strlen(Xend) + 1);
-      strcpy(xend, Xend);
-      char * yend = malloc(strlen(Yend) + 1);
-      strcpy(yend, Yend);
-      char * wi = malloc(strlen(Wi) + 1);
-      strcpy(wi, Wi);
-      char * he = malloc(strlen(He) + 1);
-      strcpy(he, He);
-      char * it = malloc(strlen(It) + 1);
-      strcpy(it, It);
-  
-      int h = strtol(he, NULL, 10);
-      int w = strtol(wi, NULL, 10); 
-      int mid_x = w / 2;
-      int mid_y = h / 2;
-      
       crd->Xstt = xstt;
       crd->Ystt = ystt;
       crd->Xend = xend;
@@ -231,24 +241,7 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
       crd->He = he;
       crd->It = it;
       crd->buf = buf;
-      
-      //basic asynchronous processing of
-      //the image divided into cartesian quadrants
-      crd->mid_x = mid_x;
-      crd->mid_y = mid_y;
-      if (i==0) {
-        crd->end_x = w;
-        crd->end_y = 0;
-      }else if (i==1) {
-        crd->end_x = w;
-        crd->end_y = h;
-      }else if (i==2) {
-        crd->end_x = 0;
-        crd->end_y = h;
-      }else if (i==3) {
-        crd->end_x = 0;
-        crd->end_y = 0;
-      }
+      crd->idx = i;
       
       rc = pthread_create(&threads[i], NULL, func, (void *)crd);
       if (rc) {

@@ -16,16 +16,14 @@ document.addEventListener("keydown", event => {
   if (event.keyCode == 76) {
     if (degrad < 130) degrad++;
     updateInformation();
-    if (P) dropSetP();
-    else dropSet();
+    dropSet();
     return;
   }
   if (event.keyCode == 79) {
     if (degrad > 1) degrad/=1.5;
     else degrad *= 1.5;
     updateInformation();
-    if (P) dropSetP();
-    else dropSet();
+    dropSet();
     return;
   }
   if (event.keyCode == 75 && iPressed) {
@@ -35,8 +33,7 @@ document.addEventListener("keydown", event => {
   }
   if (event.keyCode == 75 && !iPressed) {
     if (iter > 30) iter -= 30;
-    if (P) dropSetP();
-    else dropSet();
+    dropSet();
     iPressed = true;
     setTimeout(() => {
       iPressed = false;
@@ -51,8 +48,7 @@ document.addEventListener("keydown", event => {
   }
   if (event.keyCode == 73 && !iPressed) {
     iter += 30;
-    if (P) dropSetP();
-    else dropSet();
+    dropSet();
     iPressed = true;
     setTimeout(() => {
       iPressed = false;
@@ -87,8 +83,7 @@ document.addEventListener("keydown", event => {
     if (sat < 255) sat += 5;
     else sat = 0;
     checkColor();
-    if (P) dropSetP();
-    else dropSet();
+    draw_set();
     updateInformation();
     return;
   }
@@ -108,8 +103,7 @@ document.addEventListener("keydown", event => {
     if (Hue > 255) Hue = 0;
     else Hue += 5;
     checkColor();
-    if (P) dropSetP();
-    else dropSet();
+    draw_set();
     updateInformation();
     return;
   }
@@ -117,8 +111,7 @@ document.addEventListener("keydown", event => {
     if (Value > 255) Value = 0;
     else Value += 5;
     checkColor();
-    if (P) dropSetP();
-    else dropSet();
+    draw_set();
     updateInformation();
     return;
   }
@@ -129,14 +122,12 @@ document.addEventListener("keydown", event => {
       sat = prevColors.sat;
       Value = prevColors.Value;
       prevColors = null;
-      if (P) dropSetP();
-      else dropSet();
+      draw_set();
     } else {
       prevColors = {};
       (prevColors.Hue = Hue), (prevColors.sat = sat);
       prevColors.Value = Value;
-      if (P) dropSetP();
-      else dropSet();
+      draw_set();
     }
     return;
   }
@@ -147,27 +138,10 @@ document.addEventListener("keydown", event => {
       els[i].style.background = (dark) ? '#000' : '#fff';
       els[i].style.color = (dark) ? '#fff' : '#000';
     }
-    if (P) dropSetP();
-    else dropSet();
+    draw_set();
     return;
   }
 
-  if (event.keyCode == 81) {
-    workers *= 2;
-    updateInformation();
-    if (P) dropSetP();
-    else dropSet();
-    return;
-  }
-  if (event.keyCode == 65) {
-    if (workers > 1) {
-      workers /= 2;
-      updateInformation();
-      if (P) dropSetP();
-      else dropSet();
-    }
-    return;
-  }
   if (event.keyCode == 85) {
     cvs = createCanvas(windowWidth, windowHeight);
     if (P)
@@ -179,7 +153,7 @@ document.addEventListener("keydown", event => {
         crd.y0 = crd.y0.minus( new BigNumber(delH).times( (crd.y1.minus(crd.y0)).div(h0)));
         crd.x1 = crd.x1.plus( new BigNumber(delW).times( (crd.x1.minus(crd.x0)).div(w0)));
         crd.y1 = crd.y1.plus( new BigNumber(delH).times( (crd.y1.minus(crd.y0)).div(h0)));
-        dropSetP();
+        dropSet();
         w0 = width;
         h0 = height;
       }, 300);
@@ -292,11 +266,7 @@ function createControls() {
       midbutton = true;
       if (coords.length > 1) coords.pop();
       if (zoomed>1) zoomed -= scl;
-      if (P && coords[coords.length-1].x0.toString().length>16) {
-        dropSetP();
-      } else {
-        dropSet();
-      }
+      dropSet();
       setTimeout(() => (midbutton = false), 500);
     }
   });
@@ -379,8 +349,6 @@ function createControls() {
   dev3.children[12].innerHTML =
       "<span>press <b>1</b> to enter <b>b</b>lack&<b>w</b>hite mode</span>";
   dev3.children[13].innerHTML = "<span>press <b>2</b> to enter <b>dark</b> mode</span>";
-  dev3.children[5].innerHTML =
-      "<span>press <b>q</b>/<b>a</b> to change the number of <b>workers</b></span>";
   dev3.children[7].innerHTML = "<span>press <b>x</b> to <b>kill</b> current job</span>";
   dev3.children[14].innerHTML = '<span>press <b>u</b> to <b>update</b> image</span>';
   dev3.children[4].innerHTML = '<span>press <b>p</b> to change <b>precision</b> mode</span>';
@@ -477,7 +445,7 @@ function mousemoveP(event){
       oldMouseX = mouseX;
       oldMouseY = mouseY;
       coords.push({x0: xstt, y0: ystt, x1: xend, y1: yend});
-      dropSetP();
+      dropSet();
       coords[coords.length - 2] = coords[coords.length - 1];
       coords.pop();
     } else {
@@ -513,7 +481,6 @@ function updateInformation(currentX, currentY) {
     dev0.children[6].innerHTML = "<span>Saturation: " + sat + "</span>";
     dev0.children[7].innerHTML = "<span>Delta Hue: " + Hue + "</span>";
     dev0.children[8].innerHTML = "<span>Value: " + Value + "</span>";
-    dev0.children[9].innerHTML = "<span>Workers: " + workers + "</span>";
     dev0.children[10].innerHTML = "<span>Precision: " + ((P) ? "arbitrary" : "normal") + "</span>";
     dev0.children[13].innerHTML = "<span>View: " +( (julia) ? 'Julia' : 'Mandelbrot') + "</span>";
     let els = document.body.querySelectorAll('span');
