@@ -6,6 +6,7 @@
 #include <winsock2.h>
 #endif
 #include <microhttpd.h>
+#include <stdlib.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -13,6 +14,7 @@
 #include <stdio.h>
 #include "gmp_c.h"
 #include <pthread.h>
+#include <regex.h>
 
 #define PORT  1010 
 #define NUM_THREADS 4 
@@ -26,10 +28,23 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls)
 {
+  
   struct MHD_Response *response;
   int fd;
   int ret;
   struct stat sbuf;
+
+  regex_t regex;
+  char msgbuf[100];
+  int r;
+
+  //regex matches all /*.* files 
+  r = regcomp(&regex, "^/.*[.].*", 0);
+  if (r) {
+      fprintf(stderr, "Could not compile regex\n");
+      exit(1);
+  }
+
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
 
@@ -50,7 +65,50 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     MHD_destroy_response (response);
     return ret;
 
-  }else{
+  }else if (strcmp(url, "/") == 0 ){
+    FILE *f = fopen("../src/index.html", "r");
+    
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET); 
+    
+    char *res = malloc(fsize + 1);
+    fread(res, 1, fsize, f);
+    fclose(f);
+    
+    res[fsize] = 0;
+
+    response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+  
+    return ret;
+
+  }else if (!regexec(&regex, url, 0, NULL, 0)){
+    //send all files from 'src' folder
+    //
+    char file[20];
+    strcpy(file, "../src");
+    strcat(file, url);
+    
+    FILE *f = fopen(file, "r");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET); 
+    char *res = malloc(fsize + 1);
+    
+    fread(res, 1, fsize, f);
+    fclose(f);
+    res[fsize] = 0;
+    response = MHD_create_response_from_buffer (strlen(res), res, MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+  
+    return ret;
+
+
+  }else if (!strcmp(url, "/coordinates")){
+    
     printf("%s\n", "incoming root request..");
     const char* xstt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "xstt"); 
     const char* ystt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "ystt"); 
@@ -90,7 +148,17 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     return ret;
+  
+  }else{
+    char *data = "/salam";
+
+    response = MHD_create_response_from_buffer (strlen(data), data, MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+    MHD_destroy_response (response);
+    return ret;
+
   }
+  regfree(&regex);
 }
 
 
