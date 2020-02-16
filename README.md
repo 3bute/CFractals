@@ -1,4 +1,6 @@
-# Client-Server C implementation
+# Client-Server [fractals.js](https://github.com/3bute/fractals.js) implementation
+
+![img](https://github.com/3bute/fractals.js/raw/master/scn0.png?raw=true)
 
 **Features**
 - same client side
