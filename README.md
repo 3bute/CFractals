@@ -7,5 +7,5 @@
 - much more faster native arbitrary computations
 
 **Prep**
-- compile `main.c` with `-lgmp` `-lmicrohttpd` `-lpthread` flags 
+- compile `main.c` with `-lgmp` `-lm` `-lmicrohttpd` `-lpthread` flags 
 - `./a.out` from bash
