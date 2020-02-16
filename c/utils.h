@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "complex.h"
-#include "complex_c.h"
+#include "complexl.h"
 #include <pthread.h>
 
 #define NUM_THREADS 4 

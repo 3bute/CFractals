@@ -18,8 +18,7 @@ int ccl(mpf_t *re, mpf_t *im, Complexl_t* z){
   return 0;
 }
 
-int squarecl(Complexl_t* z)
-{
+int squarecl(Complexl_t* z) {
   mpf_t a, b, c;
   mpf_init(a);
   mpf_init(b);
@@ -41,7 +40,7 @@ int squarecl(Complexl_t* z)
   return 0;
 }
 
-int checkR(Complexl_t *z){
+int checkR(Complexl_t *z) {
   mpf_t a, b, d; 
   mpf_init(a);
   mpf_init(b);
@@ -63,14 +62,14 @@ int checkR(Complexl_t *z){
   return mpf_cmp(a, d);
 }
 
-int addcl(Complexl_t* a, Complexl_t* b)
-{
+int addcl(Complexl_t* a, Complexl_t* b) {
   mpf_add(*a->Re, *a->Re, *b->Re);
   mpf_add(*a->Im, *a->Im, *b->Im);
   return 0;
 }
 
-void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
+void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e) {
+
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
   mpf_set_default_prec( 5 * strlen(d) );
@@ -111,9 +110,11 @@ void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_clear(sub3);
   mpf_clear(div1);
   mpf_clear(mul1);
+
 }
 
 void *funcl(void *args) {
+
   int prevType;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
   
@@ -233,4 +234,5 @@ void *funcl(void *args) {
   pthread_mutex_unlock( &mutex1 );
   printf("%s\n", "thread has finished!"); 
   return NULL;
+
 }

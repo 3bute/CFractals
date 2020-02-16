@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
-#include "gmp_c.h"
+#include "utils.h"
 #include <pthread.h>
 #include <regex.h>
 
@@ -47,7 +47,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (0 != strcmp (method, "GET"))
     return MHD_NO;
 
-  if (strcmp(url, "/stop") == 0 ){
+  if (strcmp(url, "/stop") == 0 ) {
 
     printf("%s\n", "arbeit macht frei!"); 
     stop = 1;
@@ -57,14 +57,14 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     MHD_destroy_response (response);
     return ret;
 
-  }else if (strcmp(url, "/out") == 0 ){
+  } else if (strcmp(url, "/out") == 0 ) {
 
     response = MHD_create_response_from_buffer (strlen(buf), buf, MHD_RESPMEM_PERSISTENT);
     ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
     MHD_destroy_response (response);
     return ret;
 
-  }else if (strcmp(url, "/") == 0 ){
+  } else if (strcmp(url, "/") == 0 ) {
     FILE *f = fopen("../src/index.html", "r");
     
     fseek(f, 0, SEEK_END);
@@ -83,7 +83,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   
     return ret;
 
-  }else if (!regexec(&regex, url, 0, NULL, 0)){
+  } else if (!regexec(&regex, url, 0, NULL, 0)) {
     //send all files from 'src' folder
     //
     char file[20];
@@ -105,8 +105,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   
     return ret;
 
-
-  }else if (!strcmp(url, "/coordinates")){
+  } else if (!strcmp(url, "/coordinates")) {
     
     printf("%s\n", "incoming root request..");
     const char* xstt = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "xstt"); 
@@ -162,8 +161,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 
 int
-main ()
-{
+main () {
   struct MHD_Daemon *daemon;
 
   daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
