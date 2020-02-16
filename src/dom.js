@@ -172,15 +172,6 @@ document.addEventListener("keydown", event => {
       }, 300);
     return;
   }
-  if (event.keyCode == 80 ) {
-    dev0.innerHTML = '';
-    for (var i = 0; i < 20; i++) {
-      let p = document.createElement("p");
-      dev0.appendChild(p);
-    }
-    switchP(true);
-    return ;
-  }
   if (event.keyCode == 87){
     prec++;
   }

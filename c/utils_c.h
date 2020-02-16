@@ -1,79 +1,21 @@
-#include <math.h>
-#include <gmp.h>
+void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e);
 
-#define NUM_THREADS 4 
+typedef struct coords {
+   const char *Xstt;
+   const char *Ystt;
+   const char *Xend;
+   const char *Yend;
+   const char *Wi;
+   const char *He;
+   const char *It;
+   int idx;
+   char *buf;
+} coords;
 
-extern volatile int busy;
-extern volatile int stop;
-extern pthread_mutex_t mutex1;
-
-typedef struct {
-  mpf_t *Re;
-  mpf_t *Im;
-} Complexl_t;
-
-int ccl(mpf_t *re, mpf_t *im, Complexl_t* z){
-  z->Re = re;
-  z->Im = im;
-  return 0;
-}
-
-int squarecl(Complexl_t* z)
-{
-  mpf_t a, b, c;
-  mpf_init(a);
-  mpf_init(b);
-  mpf_init(c);
-
-  mpf_set(c, *z->Im);
-
-  mpf_mul(a, *z->Re, *z->Im);
-  mpf_add(*z->Im, a, a); 
-
-  mpf_mul(b, *z->Re, *z->Re);
-  mpf_mul(c, c, c);
-  mpf_sub(*z->Re, b, c);
-  
-  mpf_clear(a);
-  mpf_clear(b);
-  mpf_clear(c);
-
-  return 0;
-}
-
-int checkR(Complexl_t *z){
-  mpf_t a, b, d; 
-  mpf_init(a);
-  mpf_init(b);
-  mpf_init_set_str(d, "2.0", 10);
-
-  mpf_mul(a, *z->Re, *z->Re);
-  mpf_mul(b, *z->Im, *z->Im);
-
-  mpf_add(a, a, b);
-  mpf_sqrt(a, a); 
-  
-  //turns out these guys are the
-  //hungriest memory eaters in the 
-  //flow
-  mpf_clear(a);
-  mpf_clear(b);
-  mpf_clear(d);
-
-  return mpf_cmp(a, d);
-}
-
-int addcl(Complexl_t* a, Complexl_t* b)
-{
-  mpf_add(*a->Re, *a->Re, *b->Re);
-  mpf_add(*a->Im, *a->Im, *b->Im);
-  return 0;
-}
-
-void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
+void mapc(mpf_t *out, const char * a, const char * b, const char * c, const char * d, const char * e){
   mpf_t a0, b0, c0, d0, e0;
   mpf_t sub1, sub2, sub3, div1, mul1;
-  mpf_set_default_prec( 5 * strlen(d) );
+  mpf_set_default_prec(200);
 
   mpf_init(a0);
   mpf_init(b0);
@@ -113,11 +55,11 @@ void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char
   mpf_clear(mul1);
 }
 
-void *funcl(void *args) {
+void *func(void *args) {
   int prevType;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
   
-  coords_t *crd = (coords_t *) args;
+  struct coords *crd = (struct coords *) args;
   //in order to stop thread the cancel type should
   //be provided as async or deferred
   
@@ -165,23 +107,23 @@ void *funcl(void *args) {
       char *str_x = malloc(sizeof(char)*4)
          , *str_y = malloc(sizeof(char)*4);
       
-      Complexl_t *z = malloc(sizeof(Complexl_t));
-      Complexl_t *c = malloc(sizeof(Complexl_t));
+      Complex *z = malloc(sizeof(Complex));
+      Complex *c = malloc(sizeof(Complex));
 
       sprintf(str_x, "%i", x);
       sprintf(str_y, "%i", y);
 
-      mapl(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
-      mapl(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
+      mapc(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
+      mapc(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
       
-      ccl(&z0, &z1, z);
-      ccl( &i,  &j, c);
+      cc(&z0, &z1, z);
+      cc( &i,  &j, c);
     
       long k;
       int added = 0;
       for (k = 0; k < it; ++k){
-        squarecl(z);
-        addcl(z, c);
+        squarec(z);
+        addc(z, c);
         long delta = k * 100 / it;        
         if (checkR(z)>0){
           added = 1;
@@ -234,3 +176,4 @@ void *funcl(void *args) {
   printf("%s\n", "thread has finished!"); 
   return NULL;
 }
+
