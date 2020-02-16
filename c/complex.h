@@ -64,88 +64,92 @@ void *func(void *args) {
   long double ystt = strtold(crd->Ystt, NULL);
   long double xend = strtold(crd->Xend, NULL);
   long double yend = strtold(crd->Yend, NULL);
-  
-  int shortest = ( wi > he ) ? he : wi
-    , half = shortest / 2;
+  long double jx = 0;
+  long double jy = 0;
+  int julia = 0;
 
-  //allocate start & end point on diagonal
-  int n   = half - (crd->idx * half / NUM_THREADS )
-    , end = half - ((crd->idx + 1) * half / NUM_THREADS );
-
-  for (n; n > end; --n) {
-
-    int  x     = n
-      , _x     = n
-      ,  y     = n
-      , _y     = n
-      , done   = 0
-      , top    = 0
-      , right  = 0
-      , bottom = 0
-      , left   = 0;
-
-    while (!done) {
-      if (stop) {
-        busy--;
-        pthread_exit(0);
-        return 0;
-      }
-      
-      long double i
-                , j;
-
-      Complex_t *z = malloc(sizeof(Complex_t));
-      Complex_t *c = malloc(sizeof(Complex_t));
-
-      i = map(x, 0.0, wi, xstt, xend);
-      j = map(y, 0.0, he, ystt, yend);
-      
-      cc(0.0, 0.0, z);
-      cc(  i,   j, c);
+  if (!strcmp(crd->J, "true")) {
+    julia = 1;
+    jx = strtold(crd->Jx,  NULL);
+    jy = strtold(crd->Jy, NULL);
+  } else {
+    julia = 0;
+  }
     
-      long k;
-      int added = 0;
-      for (k = 0; k < it; ++k){
-        squarec(z);
-        addc(z, c);
-        long delta = k * 100 / it;        
-        if (getR(z) > 2.0){
-          added = 1;
-          pthread_mutex_lock( &mutex1 );
-          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
-          pthread_mutex_unlock( &mutex1 );
-          break ;
-        }
-      }
-      if (!added){ 
-          pthread_mutex_lock( &mutex1 );
-          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
-          pthread_mutex_unlock( &mutex1 );
-      }
-      
-      free(z);
-      free(c);
+  int right  = 1
+    , longest = (wi > he) ? wi : he 
+    , m = crd->idx * (longest / (2 * NUM_THREADS))  
+    , mend = (crd->idx + 1) * (longest / (2 * NUM_THREADS))
+    , left = 0
+    , down = 0
+    , x = 0
+    , y = 0
+    , up = 0
+    , brk = 0
+    , xs = wi / 2 
+    , ys = he / 2 
+    , s = 0;
 
-      //spiral drawing!
-      //
-      if (!top) {
-        if (x < (wi - _x)) ++x;
-        else top = 1;
-      }else if (!right) {
-        if (y < (he - _y)) ++y;
-        else right = 1;
-      }else if (!bottom) {
-        if (x > _x) --x;
-        else bottom = 1;
-      }else if (!left) {
-        if (y > _y) --y;
-        else left = 1;
-      }else{
-        done = 1;
-      }
+  float n = 0.0;
+
+  x = xs;
+  y = ys;
+  for (m; m < mend ; m++) {
+    for (n = 0; n < 360; n+=0.5) {
+        
+
+        if (stop) {
+          busy--;
+          pthread_exit(0);
+          return 0;
+        }
+        
+        long double i
+                  , j;
+
+        Complex_t *z = malloc(sizeof(Complex_t));
+        Complex_t *c = malloc(sizeof(Complex_t));
+
+        i = map(x, 0.0, wi, xstt, xend);
+        j = map(y, 0.0, he, ystt, yend);
+        
+        if (!julia) {
+          cc(0.0, 0.0, z);
+          cc(  i,   j, c);
+        } else {
+          cc(jx, jy, c);
+          cc( i,  j, z);
+        }
+  
+        long k;
+        int added = 0;
+        for (k = 0; k < it; ++k){
+          squarec(z);
+          addc(z, c);
+          long delta = k * 100 / it;        
+          if (getR(z) > crd->bound){
+            added = 1;
+            pthread_mutex_lock( &mutex1 );
+            sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+            pthread_mutex_unlock( &mutex1 );
+            break ;
+          }
+        }
+        if (!added){ 
+            pthread_mutex_lock( &mutex1 );
+            sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+            pthread_mutex_unlock( &mutex1 );
+        }
+        
+        free(z);
+        free(c);
+
+        x = (int) (xs + m * cos( (n * 3.141592625) / 180 )); 
+        y = (int) (ys + m * sin( (n * 3.14) / 180 )); 
+        printf("x: %i\n", x);
+        printf("y: %i\n", y);
     }
   }
-
   free(crd);
   busy--;
   pthread_mutex_lock( &mutex1 );

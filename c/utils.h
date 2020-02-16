@@ -5,20 +5,16 @@
 #include "complexl.h"
 #include <pthread.h>
 
-#define NUM_THREADS 4 
 
 volatile int busy;
 volatile int stop;
 
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
-
-pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound);
-
 void *func(void *args);
 void *funcl(void *args);
 
-pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound){
+pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *J, const char *Jx, const char *Jy){
   
   int rc
     , i;
@@ -42,6 +38,13 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
   strcpy(wi, Wi);
   char * he = malloc(strlen(He) + 1);
   strcpy(he, He);
+  char * j = malloc(strlen(J) + 1);
+  strcpy(j, J);
+  char * jx = malloc(strlen(Jx) + 1);
+  strcpy(jx, Jx);
+  char * jy = malloc(strlen(Jy) + 1);
+  strcpy(jy, Jy);
+  float bound = strtof(Bound, NULL);
   
   int h = strtol(he, NULL, 10);
   int w = strtol(wi, NULL, 10); 
@@ -55,11 +58,15 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
       crd->Wi = wi;
       crd->He = he;
       crd->It = it;
+      crd->J = j;
+      crd->Jx = jx;
+      crd->Jy = jy;
+      crd->bound = bound;
       crd->buf = buf;
       crd->idx = i;
       
       void *f;
-      if (strlen(xstt) < 20) 
+      if (strlen(xstt) < 21) 
         f = func;
       else
       {

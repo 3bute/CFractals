@@ -116,7 +116,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char* he = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "he"); 
     const char* it = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "it"); 
     const char* bound = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "bound"); 
-    const char* zoom = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "zoom"); 
+    const char* j = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "j"); 
+    const char* jx = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "jx"); 
+    const char* jy = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "jy"); 
     
     //printf("%s\n", xstt);
     //printf("%s\n", ystt);
@@ -125,6 +127,8 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     //printf("%s\n", wi);
     //printf("%s\n", he);
     //printf("%s\n", it);
+    //printf("%s\n", j);
+    //printf("%s\n", jx);
     
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
@@ -135,7 +139,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       stop = 1;
       sleep(0.5);
       stop = 0;
-      threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound);
+      threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, j, jx, jy);
     }else{
       printf("%s\n", "busy :/");
     }

@@ -322,15 +322,21 @@ function draw_set() {
 }
 
 function getValues(it, xstt, ystt, xend, yend, wi, he){
+  console.log(jPo);
+  var jx = (jPo) ? jPo.x : 0;
+  var jy = (jPo) ? jPo.y : 0;
   return new Promise((resolve, reject)=>{
     fetch('http://localhost:1010/coordinates?it=' + it
         + '&xstt=' + xstt
         + '&ystt=' + ystt
         + '&xend=' + xend
         + '&yend=' + yend
+        + '&j=' + julia
+        + '&jx=' + jx
+        + '&jy=' + jy
         + '&wi=' + parseInt(wi)
         + '&he=' + parseInt(he)
-        + '&bound=' + 2)
+        + '&bound=' + 2.0)
     .then((res)=>{
       return res.text()
     })

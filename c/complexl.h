@@ -1,8 +1,6 @@
 #include <math.h>
 #include <gmp.h>
 
-#define NUM_THREADS 4 
-
 extern volatile int busy;
 extern volatile int stop;
 extern pthread_mutex_t mutex1;
@@ -40,26 +38,24 @@ int squarecl(Complexl_t* z) {
   return 0;
 }
 
-int checkR(Complexl_t *z) {
-  mpf_t a, b, d; 
+int checkR(Complexl_t *z, double bound) {
+  mpf_t a, b, c; 
   mpf_init(a);
   mpf_init(b);
-  mpf_init_set_str(d, "2.0", 10);
-
+  mpf_init(c);
+  mpf_set_d(c, bound);
   mpf_mul(a, *z->Re, *z->Re);
   mpf_mul(b, *z->Im, *z->Im);
 
   mpf_add(a, a, b);
   mpf_sqrt(a, a); 
   
-  //turns out these guys are the
-  //hungriest memory eaters in the 
-  //flow
+  //very imp
   mpf_clear(a);
   mpf_clear(b);
-  mpf_clear(d);
+  mpf_clear(c);
 
-  return mpf_cmp(a, d);
+  return mpf_cmp(a, c);
 }
 
 int addcl(Complexl_t* a, Complexl_t* b) {
@@ -128,26 +124,26 @@ void *funcl(void *args) {
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
   
-  int shortest = ( wi > he ) ? he : wi
-    , half = shortest / 2;
+  int right  = 1
+    , longest = (wi > he) ? wi : he 
+    , m = crd->idx * (longest / (2 * NUM_THREADS))  
+    , mend = (crd->idx + 1) * (longest / (2 * NUM_THREADS))
+    , n = 0
+    , left = 0
+    , down = 0
+    , x = 0
+    , y = 0
+    , up = 0
+    , brk = 0
+    , xs = wi / 2 
+    , ys = he / 2 
+    , s = 0;
 
-  //allocate start & end point on diagonal
-  int n   = half - (crd->idx * half / NUM_THREADS )
-    , end = half - ((crd->idx + 1) * half / NUM_THREADS );
+  x = xs;
+  y = ys;
+  for (m; m < mend ; m++) {
+    for (n = 0; n < 360; n++) {
 
-  for (n; n > end; --n) {
-
-    int  x     = n
-      , _x     = n
-      ,  y     = n
-      , _y     = n
-      , done   = 0
-      , top    = 0
-      , right  = 0
-      , bottom = 0
-      , left   = 0;
-
-    while (!done) {
       if (stop) {
         busy--;
         pthread_exit(0);
@@ -159,9 +155,6 @@ void *funcl(void *args) {
       mpf_init(j);
       mpf_init(z0);
       mpf_init(z1);
-      mpf_set_str(z0, "0", 10);
-      mpf_set_str(z1, "0", 10);
-
       
       char *str_x = malloc(sizeof(char)*4)
          , *str_y = malloc(sizeof(char)*4);
@@ -175,8 +168,17 @@ void *funcl(void *args) {
       mapl(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
       mapl(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
       
-      ccl(&z0, &z1, z);
-      ccl( &i,  &j, c);
+      if (!strcmp(crd->J, "true")) {
+        mpf_set_str(z0, crd->Jx, 10);
+        mpf_set_str(z1, crd->Jy, 10);
+        ccl(&z0, &z1, c);
+        ccl( &i,  &j, z);
+      } else {
+        mpf_set_str(z0, "0", 10);
+        mpf_set_str(z1, "0", 10);
+        ccl(&z0, &z1, z);
+        ccl( &i,  &j, c);
+      }
     
       long k;
       int added = 0;
@@ -184,7 +186,7 @@ void *funcl(void *args) {
         squarecl(z);
         addcl(z, c);
         long delta = k * 100 / it;        
-        if (checkR(z)>0){
+        if (checkR(z, crd->bound)>0){
           added = 1;
           pthread_mutex_lock( &mutex1 );
           sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
@@ -209,21 +211,8 @@ void *funcl(void *args) {
 
       //spiral drawing!
       //
-      if (!top) {
-        if (x < (wi - _x)) ++x;
-        else top = 1;
-      }else if (!right) {
-        if (y < (he - _y)) ++y;
-        else right = 1;
-      }else if (!bottom) {
-        if (x > _x) --x;
-        else bottom = 1;
-      }else if (!left) {
-        if (y > _y) --y;
-        else left = 1;
-      }else{
-        done = 1;
-      }
+      x = (int) (xs + m * cos( (n * 3.14) / 180 )); 
+      y = (int) (ys + m * sin( (n * 3.14) / 180 )); 
     }
   }
 
