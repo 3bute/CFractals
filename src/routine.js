@@ -27,6 +27,7 @@ var ax
   , jPo
   , currentX
   , currentY
+  , pattern     = 0
   , coords      = []
   , hold        = false
   , closed      = false
@@ -71,7 +72,6 @@ function setup() {
   setTimeout(() => (dev3.style.display = "none"), 20000);
 }
 
-
 function xypoints(x, y) {
   let crd = coords[coords.length-1];
   if (!P){
@@ -98,7 +98,6 @@ function xypoints(x, y) {
 function getCenter() {
   let ctr = { }
     , crd = coords[coords.length-1];
-
   if (!P) {
     ctr.x = (crd.x0 + crd.x1)/2;
     ctr.y = (crd.y0 + crd.y1)/2;
@@ -106,20 +105,22 @@ function getCenter() {
     ctr.x = crd.x0.plus(crd.x1).div(2);
     ctr.y = crd.y0.plus(crd.y1).div(2);
   }
+  console.log(ctr);
   return ctr;
 }
 
 function zoom(i) {
   let crd = coords[coords.length -1]
-  let ctr = (center) ?
-    center : getCenter();
+  let ctr = (center) ? center : getCenter();
   if (!P) {
+
     ctr.xd = (crd.x1 - crd.x0)/i;
     ctr.yd = (crd.y0 - crd.y1)/i;
     crd.x0 = ctr.x - ctr.xd;
     crd.x1 = ctr.x + ctr.xd;
     crd.y0 = ctr.y + ctr.yd;
     crd.y1 = ctr.y - ctr.yd;
+
     if (Math.abs((crd.x1 - crd.x0)/(crd.y0 - crd.y1) - width/height) > 0.01) {
       switchP(true);
       return ;
@@ -127,28 +128,39 @@ function zoom(i) {
     dropSet();
   }else{
     let crd = coords[coords.length-1];
+
     coords.push({ x0: new BigNumber(crd.x0),
                   x1: new BigNumber(crd.x1),
                   y0: new BigNumber(crd.y0),
     		          y1: new BigNumber(crd.y1)});
+
     crd = coords[coords.length-1];
     var p = crd.x1.toString().length;
     setPrecision(p);
     ctr.xd = crd.x1.minus(crd.x0).div(i);
     ctr.yd = crd.y0.minus(crd.y1).div(i);
 
-    //achtung, inconvenience: elements have 0 index
-    var crd_x0 = ctr.x0.minus(ctr.xd)
-      , crd_x1 = ctr.x0.plus(ctr.xd)
-      , crd_y0 = ctr.y0.plus(ctr.yd)
-      , crd_y1 = ctr.y0.minus(ctr.yd)
+    var crd_x0 = ctr.x.minus(ctr.xd)
+      , crd_x1 = ctr.x.plus(ctr.xd)
+      , crd_y0 = ctr.y.plus(ctr.yd)
+      , crd_y1 = ctr.y.minus(ctr.yd);
 
-    coords.push({x0: crd_x0, x1: crd_x1, y0: crd_y0, y1: crd_y1});
-    let delta =  crd.x1.minus(crd.x0).div(crd.y0.minus(crd.y1)).minus(width/height).toFixed(3);
+    coords.push({x0: crd_x0,
+                 x1: crd_x1,
+                 y0: crd_y0,
+                 y1: crd_y1});
+
+    let delta =  crd.x1
+                 .minus(crd.x0)
+                 .div(crd.y0.minus(crd.y1))
+                 .minus(width/height)
+                 .toFixed(3);
+
     if (Math.abs(Number(delta))>0.001 ) {
       prec+=2;
       setPrecision(prec);
     }
+
     dropSet();
   }
 }
@@ -206,9 +218,9 @@ function makeSet() {
   yend = ystt - ylen;
   crd.y1= yend;
 
-  xstt = map(ax, 0, width, Number(crd.x0), Number(crd.x1));
-  ystt = map(ay, 0, height, Number(crd.y0), Number(crd.y1));
-  xend = map(ax + w, 0, width, Number(crd.x0), Number(crd.x1));
+  xstt = map(ax,     0, width,  Number(crd.x0), Number(crd.x1));
+  ystt = map(ay,     0, height, Number(crd.y0), Number(crd.y1));
+  xend = map(ax + w, 0, width,  Number(crd.x0), Number(crd.x1));
   yend = map(ay + h, 0, height, Number(crd.y0), Number(crd.y1));
 
   if (Math.abs((xend - xstt)/(ystt - yend) - width/height) > 0.01) {
@@ -336,6 +348,7 @@ function getValues(it, xstt, ystt, xend, yend, wi, he){
         + '&jy=' + jy
         + '&wi=' + parseInt(wi)
         + '&he=' + parseInt(he)
+        + '&pat=' + pattern
         + '&bound=' + 2.0)
     .then((res)=>{
       return res.text()

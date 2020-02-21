@@ -20,6 +20,8 @@
 
 char *buf;
 pthread_t *threads;
+extern volatile int busy;
+extern volatile int stop;
 
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
@@ -119,16 +121,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char* j = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "j"); 
     const char* jx = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "jx"); 
     const char* jy = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "jy"); 
-    
-    //printf("%s\n", xstt);
-    //printf("%s\n", ystt);
-    //printf("%s\n", xend);
-    //printf("%s\n", yend);
-    //printf("%s\n", wi);
-    //printf("%s\n", he);
-    //printf("%s\n", it);
-    //printf("%s\n", j);
-    //printf("%s\n", jx);
+    const char* pat = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "pat"); 
     
     int w = strtol(wi, NULL, 10);
     int h = strtol(he, NULL, 10);
@@ -139,7 +132,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       stop = 1;
       sleep(0.5);
       stop = 0;
-      threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, j, jx, jy);
+      threads = calcc(buf, xstt, ystt, xend, yend, it, wi, he, bound, j, jx, jy, pat);
     }else{
       printf("%s\n", "busy :/");
     }

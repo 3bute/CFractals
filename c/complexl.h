@@ -1,4 +1,5 @@
 #include <math.h>
+#include <time.h>
 #include <gmp.h>
 
 extern volatile int busy;
@@ -109,40 +110,25 @@ void mapl(mpf_t *out, const char * a, const char * b, const char * c, const char
 
 }
 
-void *funcl(void *args) {
+void *funcl1(void *args) {
 
   int prevType;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
-  
   coords_t *crd = (coords_t *) args;
   //in order to stop thread the cancel type should
   //be provided as async or deferred
   
   busy++;
-  printf("%s\n", "thread has started!"); 
   long it = strtol(crd->It, NULL, 10);
   int he = strtol(crd->He, NULL, 10);
   int wi = strtol(crd->Wi, NULL, 10); 
   
-  int right  = 1
-    , longest = (wi > he) ? wi : he 
-    , m = crd->idx * (longest / (2 * NUM_THREADS))  
-    , mend = (crd->idx + 1) * (longest / (2 * NUM_THREADS))
-    , n = 0
-    , left = 0
-    , down = 0
-    , x = 0
-    , y = 0
-    , up = 0
-    , brk = 0
-    , xs = wi / 2 
-    , ys = he / 2 
-    , s = 0;
+  int y = 0
+    , x = wi * crd->idx / NUM_THREADS
+    , xa = wi * (crd->idx + 1) / NUM_THREADS; 
 
-  x = xs;
-  y = ys;
-  for (m; m < mend ; m++) {
-    for (n = 0; n < 360; n++) {
+  for (x; x < xa ; x++) {
+    for (y = 0; y < he; y++) {
 
       if (stop) {
         busy--;
@@ -185,10 +171,10 @@ void *funcl(void *args) {
       for (k = 0; k < it; ++k){
         squarecl(z);
         addcl(z, c);
-        long delta = k * 100 / it;        
         if (checkR(z, crd->bound)>0){
           added = 1;
           pthread_mutex_lock( &mutex1 );
+          long delta = k * 100 / it;        
           sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
           pthread_mutex_unlock( &mutex1 );
           break ;
@@ -208,20 +194,155 @@ void *funcl(void *args) {
       mpf_clear(z1);
       mpf_clear(j);
       mpf_clear(i);
-
-      //spiral drawing!
-      //
-      x = (int) (xs + m * cos( (n * 3.14) / 180 )); 
-      y = (int) (ys + m * sin( (n * 3.14) / 180 )); 
     }
   }
-
-  free(crd);
   busy--;
+  free(crd);
   pthread_mutex_lock( &mutex1 );
   sprintf(crd->buf + strlen(crd->buf), "f");
   pthread_mutex_unlock( &mutex1 );
-  printf("%s\n", "thread has finished!"); 
+  return NULL;
+
+}
+
+void *funcl2(void *args) {
+
+  int prevType;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &prevType);
+  
+  coords_t *crd = (coords_t *) args;
+  //in order to stop thread the cancel type should
+  //be provided as async or deferred
+  
+  busy++;
+  long it = strtol(crd->It, NULL, 10);
+  int he = strtol(crd->He, NULL, 10);
+  int wi = strtol(crd->Wi, NULL, 10); 
+  
+  int right   = 1
+    , longest = (wi > he) ? wi : he 
+    , m       = crd->idx * (longest / (2 * NUM_THREADS))  
+    , mend    = (crd->idx + 1) * (longest / (2 * NUM_THREADS))
+    , x       = 0
+    , y       = 0
+    , n       = 0
+    , xs      = wi / 2 
+    , ys      = he / 2;
+
+  for (m; m < mend ; m++) {
+   
+    x = xs;
+    y = ys - m;
+    
+    int left_down  = 1
+      , right_down = 0
+      , right_top  = 0
+      , left_top   = 0;
+
+    for (n = 0; n <= 4 * m; n++) {
+
+      if (stop) {
+        busy--;
+        pthread_exit(0);
+        return 0;
+      }
+
+      
+      mpf_t i, j, z0, z1;
+      mpf_init(i);
+      mpf_init(j);
+      mpf_init(z0);
+      mpf_init(z1);
+      
+      char *str_x = malloc(sizeof(char)*4)
+         , *str_y = malloc(sizeof(char)*4);
+      
+      Complexl_t *z = malloc(sizeof(Complexl_t));
+      Complexl_t *c = malloc(sizeof(Complexl_t));
+
+      sprintf(str_x, "%i", x);
+      sprintf(str_y, "%i", y);
+
+      mapl(&i, str_x, "0", crd->Wi, crd->Xstt, crd->Xend);
+      mapl(&j, str_y, "0", crd->He, crd->Ystt, crd->Yend);
+      
+      if (!strcmp(crd->J, "true")) {
+        mpf_set_str(z0, crd->Jx, 10);
+        mpf_set_str(z1, crd->Jy, 10);
+        ccl(&z0, &z1, c);
+        ccl( &i,  &j, z);
+      } else {
+        mpf_set_str(z0, "0", 10);
+        mpf_set_str(z1, "0", 10);
+        ccl(&z0, &z1, z);
+        ccl( &i,  &j, c);
+      }
+    
+      long k;
+      int added = 0;
+      for (k = 0; k < it; ++k){
+        squarecl(z);
+        addcl(z, c);
+        if (checkR(z, crd->bound)>0){
+          added = 1;
+          long delta = k * 100 / it;        
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":%ld};", x, y, delta);
+          pthread_mutex_unlock( &mutex1 );
+          break ;
+        }
+      }
+      if (!added){ 
+          pthread_mutex_lock( &mutex1 );
+          sprintf(crd->buf + strlen(crd->buf), "{\"x\":%i,\"y\":%i,\"d\":0};", x, y);
+          pthread_mutex_unlock( &mutex1 );
+      }
+      
+      if (left_down) {
+        x--;
+        y++;
+        if (y >= (int)(he / 2)) {
+          left_down = 0;
+          right_down = 1;
+        }
+      } else  if (right_down) {
+        x++;
+        y++;
+        if (x >= (int)(wi / 2)) {
+          right_down = 0;
+          right_top = 1;
+        }
+      } else if (right_top) {
+        x++;
+        y--;
+        if (y <= (int)(he / 2)) {
+          right_top = 0;
+          left_top = 1;
+        }
+      } else if (left_top) {
+        x--;
+        y--;
+        if (x <= (int)(wi / 2)) {
+          left_top = 0;
+          left_down = 1;
+        }
+      }
+      
+      free(z);
+      free(c);
+      free(str_y);
+      free(str_x);
+      mpf_clear(z0);
+      mpf_clear(z1);
+      mpf_clear(j);
+      mpf_clear(i);
+    }
+  }
+  busy--;
+  free(crd);
+  pthread_mutex_lock( &mutex1 );
+  sprintf(crd->buf + strlen(crd->buf), "f");
+  pthread_mutex_unlock( &mutex1 );
   return NULL;
 
 }

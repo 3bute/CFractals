@@ -13,6 +13,12 @@ document.addEventListener("keydown", event => {
   if (event.keyCode == 88) {
     stopCalc();
   }
+  if (event.keyCode == 80) {
+    if (pattern == 0)
+      pattern = 1;
+    else
+      pattern = 0;
+  }
   if (event.keyCode == 76) {
     if (degrad < 130) degrad++;
     updateInformation();
