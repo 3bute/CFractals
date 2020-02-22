@@ -10,11 +10,8 @@ volatile int busy;
 volatile int stop;
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
-void *func1(void *args);
-void *funcl1(void *args);
-
-void *func2(void *args);
-void *funcl2(void *args);
+void *func(void *args);
+void *funcl(void *args);
 
 pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend, const char *Yend, const char *It, const char *Wi, const char *He, const char *Bound, const char *J, const char *Jx, const char *Jy, const char *Pat){
   
@@ -72,15 +69,9 @@ pthread_t *calcc(char *buf, const char *Xstt, const char *Ystt, const char *Xend
     
     void *f ;
     if (strlen(xstt) < 21) {
-      if (pat) 
-        f = func1;
-      else 
-        f = func2;
+      f = func;
     } else {
-      if (pat) 
-        f = funcl1;
-      else 
-        f = funcl2;
+      f = funcl;
     }
     rc = pthread_create(&threads[i], NULL, f, (void *)crd);
     if (rc) {

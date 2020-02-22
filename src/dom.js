@@ -20,14 +20,13 @@ document.addEventListener("keydown", event => {
       pattern = 0;
   }
   if (event.keyCode == 76) {
-    if (degrad < 130) degrad++;
+    if (degrad < 130) degrad += 2;
     updateInformation();
     dropSet();
     return;
   }
   if (event.keyCode == 79) {
-    if (degrad > 1) degrad/=1.5;
-    else degrad *= 1.5;
+    if (degrad > 1) degrad -= 2;
     updateInformation();
     dropSet();
     return;

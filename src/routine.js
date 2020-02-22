@@ -60,7 +60,7 @@ function setup() {
   w = width / scl;
   h = height / scl;
   iter = 100;
-  degrad = 10;
+  degrad = 6;
   coords.push({ x0: -3, x1: 3 });
   let crd = coords[0];
   let xlen = crd.x1 - crd.x0;
